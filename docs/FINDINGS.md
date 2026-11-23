@@ -1,7 +1,15 @@
 # What the audio shows
 
 Measured on the 1,501 public clips (45 minutes, Dominica, 44.1–120 kHz).
-Everything here is reproducible with `src/extract_clicks.py`.
+Every number below is reproduced by:
+
+```bash
+python src/fetch_data.py          # public audio + published table
+python src/extract_clicks.py data/dswp --out out/clip_features.jsonl
+python src/compare_reference.py out/clip_features.jsonl data/DominicaCodas.csv
+```
+
+If the output stops matching this document, this document is wrong.
 
 ## The headline numbers
 
@@ -42,15 +50,25 @@ high counts.
 
 ## A finding worth keeping
 
-Fast codas are measurably harder to characterise than slow ones. Take a
-five-click coda with evenly spaced clicks about 80 ms apart and jitter the
-timings by 10 ms — the amount two careful annotators actually differ by. The
-inter-click intervals shift by more than 15% in 37% of perturbations. Do the same
-to a 250 ms-spaced coda and the intervals barely move.
+Fast codas are measurably harder to characterise than slow ones, by a wide
+margin. Jitter the click times by 10 ms — roughly what two careful annotators
+differ by — and ask whether the inter-click intervals survive:
 
-So "did we agree on this coda?" depends on how fast the whale was clicking, and
-any published agreement figure that does not say which codas it covers is
-close to meaningless. 35% of the codas in this corpus are in the fast regime.
+| codas | count | survive the jitter | pass a 0.9 stability bar |
+|---|---|---|---|
+| fast (intervals under 120 ms) | 401 | 50% | 6% |
+| slow (intervals 120 ms or more) | 740 | 99% | 99% |
+
+A fast coda's intervals move by more than 15% under half the time; a slow coda's
+essentially never do. So "did we agree on this coda?" depends on how fast the
+whale was clicking, and any published agreement figure that does not say which
+codas it covers is close to meaningless. A third of this corpus is in the fast
+regime — and fast codas are not a nuisance subset, they are the `5R1` and `4R2`
+shapes that make up a large share of the Dominica repertoire.
+
+The practical consequence: fast codas need finer timing precision than 10 ms
+before their rhythm can be trusted, which means higher sampling rates in the
+annotation tool and more careful onset definition in the protocol.
 
 ## What is not established here
 

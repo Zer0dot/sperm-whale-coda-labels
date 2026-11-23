@@ -23,13 +23,17 @@ disagreement between annotators measured rather than assumed.
 | `src/iaa.py` | Compares two people's marks and reports how much they disagree |
 | `tools/marker.html` | Browser tool: open a wav, see the spectrogram, correct the marks |
 | `docs/PROTOCOL.md` | The rulebook annotators follow, including edge cases |
+| `src/fetch_data.py` | Downloads the public audio and the published measurements |
+| `src/compare_reference.py` | Reproduces every number in `docs/FINDINGS.md` |
 | `docs/FINDINGS.md` | What the audio actually shows, and where the tool is biased |
 
 ## Quick start
 
 ```bash
 pip install numpy scipy
-python src/extract_clicks.py path/to/wavs --out out/clip_features.jsonl
+python src/fetch_data.py                                          # 45 min of public audio + published table
+python src/extract_clicks.py data/dswp --out out/clip_features.jsonl
+python src/compare_reference.py out/clip_features.jsonl data/DominicaCodas.csv
 ```
 
 Then open `tools/marker.html` in a browser, drop wav files on it, and correct
