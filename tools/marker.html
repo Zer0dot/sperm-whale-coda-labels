@@ -81,6 +81,7 @@
   let marks = [];          // array of onset times (seconds), sorted
   const state = {};        // clipKey -> {marks, overlap, degraded}
   let curKey = null;
+  let marksKey = null;   // which clip the `marks` array actually belongs to
 
   // ---------- FFT ----------
   function fft(re, im) {
@@ -219,12 +220,16 @@
   }
 
   function markTouched() {
-    if (!curKey) return;
+    if (!curKey || marksKey !== curKey) return;
     state[curKey] = { ...(state[curKey] || {}), marks: marks.slice(), touched: true };
   }
 
+  // Guarded: `marks` may still hold the previous clip's clicks while the next
+  // one is decoding.  Writing them under the new key silently corrupts it.
   function saveState() {
-    if (curKey) state[curKey] = { ...(state[curKey] || {}), marks: marks.slice() };
+    if (curKey && marksKey === curKey) {
+      state[curKey] = { ...(state[curKey] || {}), marks: marks.slice() };
+    }
   }
 
   function loadClip(i) {
@@ -252,6 +257,7 @@
       sgram = computeSpectrogram(audio);
       const prev = state[curKey];
       marks = prev ? prev.marks.slice() : [];
+      marksKey = curKey;
       // Machine proposals must never be mistaken for confirmed human marks.
       if (!prev) { propose(); state[curKey] = { marks: marks.slice(), touched: false }; }
       draw();
@@ -315,7 +321,14 @@
 
   document.getElementById('undo').onclick = () => { marks.pop(); markTouched(); draw(); };
   document.getElementById('clear').onclick = () => { marks = []; markTouched(); draw(); };
-  document.getElementById('propose').onclick = () => { propose(); saveState(); draw(); };
+  document.getElementById('propose').onclick = () => {
+    if (!curKey || marksKey !== curKey) return;
+    propose();
+    // A fresh machine proposal is unconfirmed by definition, even if the user
+    // had edited the previous marks for this clip.
+    state[curKey] = { ...(state[curKey] || {}), marks: marks.slice(), touched: false };
+    draw();
+  };
   document.getElementById('prev').onclick = () => loadClip(idx - 1);
   document.getElementById('next').onclick = () => loadClip(idx + 1);
 

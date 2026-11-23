@@ -113,11 +113,14 @@ does not say which codas it covers is close to meaningless.
 ## 4. What was tried on the detector, and what each attempt changed
 
 - **Splitting codas on gaps.** The published table answers "how long a gap still
-  counts as inside a coda": the largest is 0.80 s, the 99th percentile 0.49 s. A
-  generous 1.0 s chains codas together and gives a median of 8 clicks against 5
-  in the reference; 0.55 s fixes that.
+  counts as inside a coda": the 99th percentile is 0.49 s, so 0.55 s is used.
+  This matters less than expected on the current code. Doubling it to 1.0 s
+  changes the median click count not at all (6 either way) and the mean only
+  from 6.61 to 6.56. An earlier draft of this document claimed 1.0 s gave a
+  median of 8; that does not reproduce once pulses are merged and long runs are
+  split at their widest gap, and the claim is withdrawn.
 - **Discarding over-long runs.** Wrong. Echolocation clicks trail codas
-  constantly, so discarding such runs throws away the coda in 339 of 1,501 clips.
+  constantly, so discarding such runs throws away the coda in 306 of 1,501 clips.
   Splitting them at their widest gap is better.
 - **An amplitude floor for echoes.** Modest. Two thirds of peaks sit more than
   6 dB below their run's loudest click, but a floor moves the median count from
@@ -139,4 +142,4 @@ does not say which codas it covers is close to meaningless.
 - **No claim about whale behaviour.** 45 minutes, one site, one clan in the
   joined subset.
 - **The published labels are assumed correct.** They were not re-verified here,
-  and the 110 unmapped clips remain unexplained.
+  and the 119 unmapped clips remain unexplained.

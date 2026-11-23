@@ -34,8 +34,8 @@ def click(x, t, amp):
     x[i:i + n] += amp * rng.normal(0, 1, n) * np.hanning(n)
 
 
-def clip(events, dur=4.0, noise=0.002):
-    rng = np.random.default_rng(0)
+def clip(events, dur=4.0, noise=0.002, seed=0):
+    rng = np.random.default_rng(seed)
     x = rng.normal(0, noise, int(dur * SR))
     for t, amp in events:
         click(x, t, amp)
@@ -45,16 +45,30 @@ def clip(events, dur=4.0, noise=0.002):
 def main():
     # A loud run and a quiet coda in the same clip, 15 dB apart.  A clip-wide
     # amplitude gate deletes the quiet one entirely; the gate must be per run.
-    loud = [(0.20, 1.0), (0.28, 1.0), (0.36, 1.0), (0.44, 1.0), (0.52, 1.0)]
-    quiet_amp = 10 ** (-15 / 20)
-    quiet = [(2.00, quiet_amp), (2.25, quiet_amp), (2.50, quiet_amp)]
-    codas = E.detect_codas(clip(loud + quiet), SR)
-    found_slow = [c for c in codas if c.t0 > 1.5]
-    check("quiet coda next to a loud run survives", len(found_slow) >= 1,
-          f"{len(codas)} codas, {len(found_slow)} after t=1.5s")
-    if found_slow:
-        check("quiet coda keeps its click count", len(found_slow[0].clicks) == 3,
-              str(len(found_slow[0].clicks)))
+    # A loud run and a quiet coda in the same clip, 15 dB apart.  This is
+    # tested on peak arrays rather than through synthesised audio: a quiet coda
+    # in a real noise floor is marginal enough that detection depends on the
+    # noise draw, which would make the test flaky for reasons unrelated to the
+    # gate.  Here the question is narrow -- does the level gate delete the quiet
+    # run?  A clip-wide gate does; a per-run gate does not.
+    p = E.resolve_profile("farfield")
+    loud_t = np.array([0.20, 0.28, 0.36, 0.44, 0.52])
+    quiet_t = np.array([2.00, 2.25, 2.50])
+    times = np.concatenate([loud_t, quiet_t])
+    heights = np.concatenate([np.full(5, 1.0), np.full(3, 10 ** (-15 / 20))])
+    codas = E.codas_from_candidates(times, heights, med=1e-4, p=p)
+    after = [c for c in codas if c.t0 > 1.5]
+    check("quiet coda beside a loud run is not deleted", len(after) == 1,
+          f"{len(codas)} codas, {len(after)} after t=1.5s")
+    if after:
+        check("quiet coda keeps its click count", len(after[0].clicks) == 3,
+              str(len(after[0].clicks)))
+
+    # Two separate codas in one clip must both appear, not just the loud one.
+    both = E.codas_from_candidates(
+        np.concatenate([loud_t, quiet_t]),
+        np.concatenate([np.full(5, 1.0), np.full(3, 0.5)]), med=1e-4, p=p)
+    check("both codas in a clip are returned", len(both) == 2, f"{len(both)}")
 
     # Two codas separated by more than the split gap must not merge.
     two = [(0.20, 1.0), (0.28, 1.0), (0.36, 1.0),

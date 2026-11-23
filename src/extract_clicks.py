@@ -174,7 +174,7 @@ def _split_oversized(times: np.ndarray, heights: np.ndarray, max_clicks: int, de
     Cutting at the widest gap keeps the rhythmically natural boundaries.
     Discarding oversized runs instead is tempting and wrong: echolocation
     clicks trail codas constantly, so most clips contain one long run and would
-    yield nothing (measured: 339 of 1501 clips lose their coda that way).
+    yield nothing (measured: 306 of 1501 clips lose their coda that way).
     """
     if times.size <= max_clicks or depth > 200:
         yield times, heights
