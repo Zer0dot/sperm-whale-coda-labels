@@ -349,7 +349,7 @@ const CARDS = [
   ["Why the leak matters", "Any evaluation treating those clips as unlabelled is invalid — and random splits don't fix it."],
   ["IAA", "Inter-annotator agreement: give the same audio to two people and measure how far apart they land."],
   ["F1", "One number combining precision (of the clicks you marked, how many were real) and recall (of the real ones, how many you found)."],
-  ["Stability", "Jitter the clicks by the observed disagreement and ask whether the derived label survives. A label that survives 99% is safe. Corpus-wide, fast codas average about 46% — see the slider in lesson 6."],
+  ["Stability", "Jitter the clicks by the observed disagreement, then ask whether the derived label survives. A label that survives 99% is safe. Run over the corpus's own published timings, a fast coda keeps its rhythm only about half the time — but that is a simulation, not a human agreement study."],
   ["Why fast codas are harder", "A fixed timing error is a bigger fraction of a 90 ms gap than a 300 ms gap, so the rhythm flips more easily."],
   ["Why we don't use coda names in code", "Names bake in a controversy. The pipeline emits times; a declared step derives names."],
   ["Why 3–40 clicks and 1–10 both appear", "Codas range widely across populations (up to 40 clicks); the published Dominica table records 1 to 10. Always say which population a range describes."],
@@ -407,7 +407,7 @@ const QUIZ = [
     q: "Two annotators agree on a coda 99% of the time. What's still missing before you trust it?",
     a: ["Nothing, that's excellent", "Whether they used the same software", "Whether they're both researchers", "Whether that figure covers fast codas too \u2014 they're far more fragile"],
     correct: 3,
-    why: "Slow codas survive jitter about 99% of the time; fast ones average about 46% across the corpus, and the slider here shows roughly 64% for its example. A single agreement number hides the hard third of the corpus."
+    why: "On the corpus's own published timings, the same jitter test leaves a slow coda's rhythm intact about 99% of the time and a fast coda's about 46%. That is a simulation, not an annotator study — and it is still enough to show why one agreement number hides the hard third of the corpus."
   },
   {
     q: "A detector reports a confident coda in a clip of pure background noise. What does that tell you?",
