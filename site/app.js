@@ -272,8 +272,10 @@ function leakDemo(manifest) {
     b.textContent = `clip ${e.clip} · ${e.rig.includes("tag") ? "tag" : "towed"} · ${e.fileDur.toFixed(2)} s`;
     b.onclick = () => {
       out.innerHTML =
-        `<code>file is ${e.fileDur.toFixed(3)} s</code> → minus the 1.000 s of padding → ` +
+        `<code>original file was ${e.fileDur.toFixed(3)} s</code> → minus 1.000 s of padding → ` +
         `the coda lasted <b>${(e.fileDur - 1).toFixed(3)} s</b>.<br>` +
+        `<span class="dim">(The clip playing on this page is a ${e.clipLen.toFixed(3)} s excerpt of ` +
+        `it — same coda, trimmed tighter for teaching.)</span><br>` +
         `Duration alone is ambiguous — dozens of codas share a length — but the clips are stored in ` +
         `recording order, so a <em>run</em> of consecutive matches pins each one down. That resolves ` +
         `to:<br><br>` +
@@ -347,7 +349,7 @@ const CARDS = [
   ["Why the leak matters", "Any evaluation treating those clips as unlabelled is invalid — and random splits don't fix it."],
   ["IAA", "Inter-annotator agreement: give the same audio to two people and measure how far apart they land."],
   ["F1", "One number combining precision (of the clicks you marked, how many were real) and recall (of the real ones, how many you found)."],
-  ["Stability", "Jitter the clicks by the observed disagreement and ask whether the derived label survives. A label that survives 99% is safe; 46% is not."],
+  ["Stability", "Jitter the clicks by the observed disagreement and ask whether the derived label survives. A label that survives 99% is safe. Corpus-wide, fast codas average about 46% — see the slider in lesson 6."],
   ["Why fast codas are harder", "A fixed timing error is a bigger fraction of a 90 ms gap than a 300 ms gap, so the rhythm flips more easily."],
   ["Why we don't use coda names in code", "Names bake in a controversy. The pipeline emits times; a declared step derives names."],
   ["Why 3–40 clicks and 1–10 both appear", "Codas range widely across populations (up to 40 clicks); the published Dominica table records 1 to 10. Always say which population a range describes."],
@@ -405,7 +407,7 @@ const QUIZ = [
     q: "Two annotators agree on a coda 99% of the time. What's still missing before you trust it?",
     a: ["Nothing, that's excellent", "Whether they used the same software", "Whether they're both researchers", "Whether that figure covers fast codas too \u2014 they're far more fragile"],
     correct: 3,
-    why: "Slow codas survive jitter about 99% of the time, fast ones roughly half. A single agreement number can hide the hard third of the corpus."
+    why: "Slow codas survive jitter about 99% of the time; fast ones average about 46% across the corpus, and the slider here shows roughly 64% for its example. A single agreement number hides the hard third of the corpus."
   },
   {
     q: "A detector reports a confident coda in a clip of pure background noise. What does that tell you?",

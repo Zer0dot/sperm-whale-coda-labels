@@ -20,11 +20,14 @@ No build step, no dependencies, no network beyond its own folder.
 ## How the clips are cut
 
 The original public files are one published coda with **1.000 s of padding**
-(0.5 s at each end). These teaching clips are re-trimmed tighter: 0.30 s before
-the first click and 0.30 s after the last. That is why the manifest's onset
-times are `0.30 + cumulative published intervals`, and why a clip's `fileDur`
-(the original length, which is what leaks the label) is not the same as its
-length on disk.
+(0.5 s at each end). The cutter drops 0.30 s from the start of the file and
+keeps 0.30 s after the last click, so a teaching clip begins **0.20 s** before
+the first click — and the manifest's onsets are `0.20 + cumulative published
+intervals`.
+
+Two different lengths appear in the manifest and they are easy to confuse:
+`fileDur` is the length of the *original* public file (coda + 1.000 s), which is
+the number that leaks the label; `clipLen` is what this page actually plays.
 
 Regenerating:
 

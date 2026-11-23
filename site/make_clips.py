@@ -25,8 +25,14 @@ import numpy as np
 import scipy.io.wavfile as wf
 from scipy.signal import resample_poly
 
-LEAD = 0.30      # seconds kept before the first click
-TAIL = 0.30      # seconds kept after the last click
+# The public files are one coda with 0.5 s of padding at each end.  We keep a
+# shorter lead-in than that, so the coda does NOT start at LEAD in the cut clip:
+# it starts at (SOURCE_LEAD - CUT_FROM).  Getting this wrong puts every onset
+# 100 ms away from the audio.
+SOURCE_LEAD = 0.50   # padding before the first click in the published files
+CUT_FROM = 0.30      # drop this much from the start of the file
+LEAD = SOURCE_LEAD - CUT_FROM   # 0.20 s of lead-in in the teaching clip
+TAIL = 0.30          # seconds kept after the last click
 TARGET_SR = 44100
 
 
@@ -111,8 +117,8 @@ def main(argv=None) -> int:
         sr, x = wf.read(str(args.corpus / f"{pick}.wav"))
         x = (x[:, 0] if x.ndim > 1 else x).astype(np.float64) / 32768.0
         coda_dur = float(row["Duration"])
-        a = int(LEAD * sr)
-        b = a + int((coda_dur + LEAD + TAIL) * sr)
+        a = int(CUT_FROM * sr)
+        b = a + int((LEAD + coda_dur + TAIL) * sr)
         x = x[a:b]
         g = gcd(TARGET_SR, sr)
         x = resample_poly(x, TARGET_SR // g, sr // g)
@@ -125,6 +131,7 @@ def main(argv=None) -> int:
             "codaType": row["CodaType"], "nClicks": int(row["nClicks"]),
             "icis": [round(v, 3) for v in icis],
             "onsets": [round(LEAD + sum(icis[:i]), 3) for i in range(int(row["nClicks"]))],
+            "clipLen": round(len(x) / TARGET_SR, 3),
             "rig": rig_of(pick), "clan": row["Clan"], "unit": row["Unit"], "date": row["Date"],
             "fileDur": round(coda_dur + 1.000, 3),
             "detected": feats.get(pick),
