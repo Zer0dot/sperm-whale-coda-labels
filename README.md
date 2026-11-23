@@ -15,7 +15,7 @@ tool:
 
 **The public clips are labelled after all.** Each clip is one published coda
 padded by half a second at each end, so the label is recoverable from file
-duration alone. `src/join.py` maps 1,391 of 1,501 clips to published rows. That
+duration alone. `src/join.py` maps 1,382 of 1,501 clips to published rows. That
 means the corpus is a ready-made benchmark — and that it leaks its own labels.
 Read `docs/FINDINGS.md` before using it for anything.
 
@@ -64,10 +64,10 @@ the marks.
 
 ## Where it stands
 
-- 1,501 clips, 45 minutes of audio, of which 1,391 are matched to published
+- 1,501 clips, 45 minutes of audio, of which 1,382 are matched to published
   labels.
-- Detector against those labels: 19.7% exact click count overall — but 58.8% on
-  the 199 whale-borne clips and 13.2% on the 1,192 towed ones. Near-field audio
+- Detector against those labels: 19.6% exact click count overall — but 58.8% on
+  the 199 whale-borne clips and 13.0% on the 1,183 towed ones. Near-field audio
   is a different problem from far-field audio, and averaging them hides that.
 - Agreement machinery built and self-tested (17 checks), but no human
   annotator has marked anything yet — so there is no real IAA figure, and none

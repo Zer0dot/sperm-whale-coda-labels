@@ -218,6 +218,11 @@
       : 'no clicks marked yet';
   }
 
+  function markTouched() {
+    if (!curKey) return;
+    state[curKey] = { ...(state[curKey] || {}), marks: marks.slice(), touched: true };
+  }
+
   function saveState() {
     if (curKey) state[curKey] = { ...(state[curKey] || {}), marks: marks.slice() };
   }
@@ -230,8 +235,12 @@
     curKey = f.name;
     document.getElementById('meta').textContent =
       `${f.name} — clip ${idx + 1} of ${files.length}`;
+    const myKey = f.name;
     const fr = new FileReader();
     fr.onload = async () => {
+      // A slow decode can finish after the user has moved on; without this
+      // check its marks attach to whatever clip is current, silently.
+      if (curKey !== myKey) return;
       const ac = new (window.AudioContext || window.webkitAudioContext)();
       try {
         audio = await ac.decodeAudioData(fr.result);
@@ -239,10 +248,12 @@
         document.getElementById('meta').textContent = `${f.name} — could not decode`;
         return;
       }
+      if (curKey !== myKey) return;
       sgram = computeSpectrogram(audio);
       const prev = state[curKey];
       marks = prev ? prev.marks.slice() : [];
-      if (!prev) { propose(); }
+      // Machine proposals must never be mistaken for confirmed human marks.
+      if (!prev) { propose(); state[curKey] = { marks: marks.slice(), touched: false }; }
       draw();
       // decode context is single-use-ish; close it
       ac.close();
@@ -299,11 +310,11 @@
     if (near >= 0) marks.splice(near, 1);
     else marks.push(snapped);
     marks.sort((a, b) => a - b);
-    saveState(); draw();
+    markTouched(); draw();
   });
 
-  document.getElementById('undo').onclick = () => { marks.pop(); saveState(); draw(); };
-  document.getElementById('clear').onclick = () => { marks = []; saveState(); draw(); };
+  document.getElementById('undo').onclick = () => { marks.pop(); markTouched(); draw(); };
+  document.getElementById('clear').onclick = () => { marks = []; markTouched(); draw(); };
   document.getElementById('propose').onclick = () => { propose(); saveState(); draw(); };
   document.getElementById('prev').onclick = () => loadClip(idx - 1);
   document.getElementById('next').onclick = () => loadClip(idx + 1);
@@ -325,6 +336,8 @@
         // key on the stem: src/extract_clicks.py writes "1234", not "1234.wav"
         clip: clip.replace(/\.wav$/i, ''),
         marks: v.marks, overlap: !!v.overlap, degraded: !!v.degraded,
+        // "machine-proposed-unconfirmed" means nobody has checked these marks.
+        provenance: v.touched ? 'human-edited' : 'machine-proposed-unconfirmed',
         // every group is exported; what counts as a coda is a downstream decision
         codas: groupsOf(v.marks).map(c => ({ clicks: c }))
       })) };

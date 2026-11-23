@@ -90,25 +90,26 @@ def main(argv: list[str] | None = None) -> int:
     train = [clips[i] for i in order[:n_train]]
     val = [clips[i] for i in order[n_train:]]
 
+    # Only coda-level parameters are swept.  Peak detection is fixed, because
+    # peaks are cached once above; sweeping thr_k here would look like a sweep
+    # and change nothing -- an earlier version did exactly that and produced
+    # three identical "best" rows.
     results = []
     for floor in (-99, -24, -18, -12, -6):
         for min_ici in (0.015, 0.025, 0.040, 0.060):
-            for thr_k in (2.5, 3.0, 3.5):
-                p = E.resolve_profile("farfield", rel_floor_db=float(floor),
-                                      min_ici=min_ici, thr_k=thr_k)
-                cache["_p"] = p
-                m = evaluate(train, cache, truth, window=True)
-                results.append((m["exact"], m["within1"], floor, min_ici, thr_k, m))
+            p = E.resolve_profile("farfield", rel_floor_db=float(floor), min_ici=min_ici)
+            cache["_p"] = p
+            m = evaluate(train, cache, truth, window=True)
+            results.append((m["exact"], m["within1"], floor, min_ici, m))
     results.sort(key=lambda r: (r[0], r[1]), reverse=True)
 
     print("\ntop settings on train (windowed click count):")
-    for exact, w1, floor, mi, tk, m in results[:5]:
+    for exact, w1, floor, mi, m in results[:5]:
         print(f"  exact {100 * exact:5.1f}%  within1 {100 * w1:5.1f}%  "
-              f"floor={floor:4d} min_ici={mi:.3f} thr_k={tk:.1f}  bias {m['bias']:+.2f}")
+              f"floor={floor:4d} min_ici={mi:.3f}  bias {m['bias']:+.2f}")
 
     best = results[0]
-    p = E.resolve_profile("farfield", rel_floor_db=float(best[2]),
-                          min_ici=best[3], thr_k=best[4])
+    p = E.resolve_profile("farfield", rel_floor_db=float(best[2]), min_ici=best[3])
     cache["_p"] = p
     print(f"\nvalidation on {len(val)} held-out clips, whole-clip primary coda:")
     print("  ", evaluate(val, cache, truth, window=False))
@@ -118,10 +119,12 @@ def main(argv: list[str] | None = None) -> int:
     # The corpus is two recording setups wearing one name.  Reported separately
     # because pooling them hides the single most useful fact about the detector:
     # near-field audio is a different problem from far-field audio.
-    print("\nby recording rig, default profile, all labelled clips:")
+    print("\nOVERALL, default profile, all labelled clips "
+          "(this is the table quoted in docs/FINDINGS.md):")
     cache["_p"] = E.resolve_profile("farfield")
     towed = [c for c in clips if cache[c + ":sr"] <= 96000]
     borne = [c for c in clips if cache[c + ":sr"] > 96000]
+    print("  pooled                      ", evaluate(clips, cache, truth, window=False))
     for name, group in (("towed hydrophone (<=96 kHz)", towed),
                         ("whale-borne tag (>96 kHz)", borne)):
         if group:

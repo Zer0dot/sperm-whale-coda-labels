@@ -172,7 +172,7 @@ def _split_oversized(times: np.ndarray, heights: np.ndarray, max_clicks: int, de
     Cutting at the widest gap keeps the rhythmically natural boundaries.
     Discarding oversized runs instead is tempting and wrong: echolocation
     clicks trail codas constantly, so most clips contain one long run and would
-    yield nothing (measured: 734 of 1501 clips lost their coda that way).
+    yield nothing (measured: 339 of 1501 clips lose their coda that way).
     """
     if times.size <= max_clicks or depth > 200:
         yield times, heights
@@ -211,17 +211,23 @@ def codas_from_candidates(times: np.ndarray, heights: np.ndarray, med: float,
     if times.size < 3:
         return []
 
-    if times.size >= 6:
-        cut = two_means_threshold(heights)
-        keep = heights > cut
-        times, heights = times[keep], heights[keep]
-    if times.size < 3:
-        return []
-
+    # No clip-global amplitude gate: an earlier version thresholded across the
+    # whole clip and silently deleted a quiet coda sharing it with a loud one.
+    # Level is judged per run instead, below.
     times, heights = _merge_pulses(times, heights, p["min_ici"])
 
     codas: list[Coda] = []
     for run_t, run_h in _runs(times, heights, p["max_ici"]):
+        # Split loud from quiet *within this run*.  A clip-wide version of this
+        # gate deleted a quiet coda sharing a clip with a loud one; dropping it
+        # altogether floods the output with noise fragments (2,849 candidate
+        # codas instead of ~1,800).  Per run is the honest middle.
+        if run_h.size >= 6:
+            cut = two_means_threshold(run_h)
+            keep = run_h > cut
+            run_t, run_h = run_t[keep], run_h[keep]
+        if run_t.size < 3:
+            continue
         # Echo floor, per run: measured against this run's own loudest click.
         floor = float(run_h.max()) * 10 ** (p["rel_floor_db"] / 20.0)
         keep = run_h >= floor

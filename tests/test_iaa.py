@@ -118,6 +118,11 @@ def main():
     silent = iaa.compare_clip({"clip": "1", "codas": [{"clicks": [0.1, 0.2, 0.3]}]},
                               {"clip": "1", "codas": []})
     check("silent annotator scores zero", silent["f1"] == 0.0, str(silent["f1"]))
+    # Click totals must survive the one-side-empty case, or a summary silently
+    # reports fewer clicks than anyone actually marked.
+    check("silent annotator still counts their clicks",
+          silent.get("n_clicks_a") == 3 and silent.get("n_clicks_b") == 0,
+          f"a={silent.get('n_clicks_a')} b={silent.get('n_clicks_b')}")
 
     print()
     if FAILS:

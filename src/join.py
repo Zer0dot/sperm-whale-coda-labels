@@ -52,7 +52,7 @@ def load_table(path: Path) -> list[dict]:
 
 
 def match(durations: dict[str, float], rows: list[dict], tol: float = TOL,
-          min_run: int = 3) -> dict[str, dict]:
+          min_run: int = 5) -> dict[str, dict]:
     """Map clip -> table row using contiguous runs, not isolated duration hits.
 
     Matching each clip on duration alone is hopeless: 1,491 of 1,501 clips match
@@ -62,6 +62,13 @@ def match(durations: dict[str, float], rows: list[dict], tol: float = TOL,
     consecutive clips at once is the thread to pull.  Rows and clips are walked
     in order and a run is extended only when the next clip's duration matches
     the next row's.
+
+    `min_run` is 5 because shorter runs arise by chance: permuting clip
+    durations (same values, no correspondence) still yields about one 3-clip run
+    per permutation, with a maximum of 4.  Requiring 5 costs 9 clips and makes
+    the finding robust to that objection; `--min-run 3` gives 1,391 instead.
+
+    A row is never assigned twice, so the mapping is one-to-one by construction.
     """
     clips = sorted(durations, key=lambda c: int(c) if c.isdigit() else 0)
     cands: list[list[int]] = []
@@ -80,7 +87,8 @@ def match(durations: dict[str, float], rows: list[dict], tol: float = TOL,
                 continue
             n = 0
             while (i + n < len(clips) and (start_row + n) < len(rows)
-                   and (start_row + n) in cands[i + n]):
+                   and (start_row + n) in cands[i + n]
+                   and (start_row + n) not in used):
                 n += 1
             if best is None or n > best[0]:
                 best = (n, start_row)
@@ -106,11 +114,12 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("table", type=Path)
     ap.add_argument("--out", type=Path, default=Path("out/join.csv"))
     ap.add_argument("--tol", type=float, default=TOL)
+    ap.add_argument("--min-run", type=int, default=5)
     args = ap.parse_args(argv)
 
     durations = clip_durations(args.audio_dir)
     rows = load_table(args.table)
-    mapping = match(durations, rows, args.tol)
+    mapping = match(durations, rows, args.tol, args.min_run)
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     with args.out.open("w", newline="") as fh:

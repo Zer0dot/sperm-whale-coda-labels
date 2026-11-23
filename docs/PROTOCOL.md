@@ -23,9 +23,12 @@ one-line conversion away.
   it ends. The first rise out of the background noise.
 - **Coda** — a run of clicks separated by gaps of **less than 0.55 seconds**.
   This threshold is measured, not chosen: across 8,719 published Dominica codas
-  the longest gap *inside* a coda is 0.80 s and the 99th percentile is 0.49 s.
-  A more generous split chains separate codas into one and inflates the click
-  count (we tested it: median 8 clicks instead of 5).
+  the 99th percentile internal gap is 0.49 s. A more generous split chains
+  separate codas into one and inflates the click count (we tested it: median 8
+  clicks instead of 5). Be aware the rule is not perfect — 30 of those 8,719
+  published codas contain an internal gap longer than 0.55 s, so this rule would
+  break them in two. If you see a coda that looks split, mark it and flag it
+  rather than forcing it into the rule.
 - **ICI** — inter-click interval, the gap between one onset and the next. This
   is the actual measurement of interest. Everything else is derived.
 

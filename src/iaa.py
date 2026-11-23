@@ -131,13 +131,15 @@ def compare_clip(a: dict, b: dict, tol: float = DEFAULT_TOL) -> dict:
         "pairs": 0,
     }
 
-    if not ca or not cb:
-        out.update(status="one_side_empty", f1=0.0, onset_precision=0.0, onset_recall=0.0)
-        return out
-
-    # Every click either annotator marked is in the denominator.
+    # Every click either annotator marked is in the denominator -- including
+    # when one side marked nothing, so the summary click totals stay honest.
     n_a = sum(len(c["clicks"]) for c in ca)
     n_b = sum(len(c["clicks"]) for c in cb)
+
+    if not ca or not cb:
+        out.update(status="one_side_empty", f1=0.0, onset_precision=0.0,
+                   onset_recall=0.0, n_clicks_a=n_a, n_clicks_b=n_b)
+        return out
 
     pairs = match_onsets([c["clicks"][0] for c in ca], [c["clicks"][0] for c in cb], CODA_TOL)
     out["unmatched_codas"] = (len(ca) - len(pairs)) + (len(cb) - len(pairs))
