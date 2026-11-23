@@ -311,7 +311,7 @@ function stabilityDemo(manifest) {
 /* ───────────────────────── flashcards ───────────────────────── */
 const CARDS = [
   ["Coda", "A short rhythmic burst of clicks, used socially. The unit everyone studies."],
-  ["Click", "One pulse inside a coda. Sperm whale clicks are the loudest sounds made by any animal."],
+  ["Click", "One pulse inside a coda. Sperm whale clicks are among the loudest sounds made by any animal."],
   ["ICI", "Inter-click interval — the gap between consecutive clicks. The actual measurement of a coda."],
   ["Clan", "A group of whales sharing a coda repertoire. Learned, not genetic — this is culture."],
   ["Unit", "A smaller social group within a clan; the whales that actually swim together."],
