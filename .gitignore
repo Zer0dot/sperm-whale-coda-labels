@@ -1,0 +1,4 @@
+out/*.jsonl
+*.wav
+.venv/
+__pycache__/
