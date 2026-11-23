@@ -206,7 +206,10 @@ function playerCard(el, entry) {
   if (mode === "mark") {
     canvas.style.cursor = "crosshair";
     canvas.addEventListener("click", ev => {
-      if (!specs[entry.id] || scoring) return;
+      if (!specs[entry.id]) return;
+      // Editing after a score resets the comparison, so a second attempt is
+      // scored on its own merits rather than against the previous verdict.
+      if (scoring) { scoring = false; readout.textContent = ""; }
       const r = canvas.getBoundingClientRect();
       const t = ((ev.clientX - r.left) / r.width) * specs[entry.id].dur;
       const snapped = Math.round(t / 0.005) * 0.005;
@@ -357,39 +360,39 @@ const CARDS = [
 /* ───────────────────────── quiz ───────────────────────── */
 const QUIZ = [
   {
-    q: "A colleague reports “our detector is 94% accurate on sperm whale codas.” What's the first thing you ask?",
+    q: "A colleague reports \u201cour detector is 94% accurate on sperm whale codas.\u201d What's the first thing you ask?",
     a: ["Which recording rig, and what does 'accurate' mean per clip?", "How big is the training set?", "Which coda types does it cover?", "Is the code open source?"],
     correct: 0,
     why: "A pooled accuracy figure across towed and whale-borne audio describes neither. And 'accurate' usually hides whether it's a classification score or a per-clip click count."
   },
   {
     q: "Why does the pipeline output click times instead of coda names like 5R1?",
-    a: ["Names are copyrighted", "Because several incompatible naming schemes exist, so names are derived later under a declared scheme", "Because names are longer to store", "Because whales don't have names"],
-    correct: 1,
+    a: ["Names are copyrighted", "Because names are longer to store", "Because several incompatible naming schemes exist, so names are derived later under a declared scheme", "Because whales don't have names"],
+    correct: 2,
     why: "Times are objective; names are conventions. Baking a name in makes the data incomparable with other labs."
   },
   {
     q: "You find a public dataset of whale audio with no metadata. Why might it still be labelled?",
-    a: ["Whale songs are recognisable by ear", "The file duration can encode the label if the clips were cut from a published table", "It can't be", "The sample rate gives it away"],
-    correct: 1,
-    why: "Exactly what happened here: each clip is one coda plus 1.000 s of padding, so duration − 1.000 recovers the published label."
+    a: ["The file duration can encode the label if the clips were cut from a published table", "It can't be", "Whale songs are recognisable by ear", "The sample rate gives it away"],
+    correct: 0,
+    why: "Exactly what happened here: each clip is one coda plus 1.000 s of padding, so duration minus 1.000 recovers the published label."
   },
   {
     q: "Two annotators agree on a coda 99% of the time. What's still missing before you trust it?",
-    a: ["Nothing, that's excellent", "Whether that figure covers fast codas too — they're far more fragile", "Whether they used the same software", "Whether they're both researchers"],
-    correct: 1,
-    why: "Slow codas survive jitter ~99% of the time, fast ones roughly half. A single agreement number can hide the hard third of the corpus."
+    a: ["Nothing, that's excellent", "Whether they used the same software", "Whether they're both researchers", "Whether that figure covers fast codas too \u2014 they're far more fragile"],
+    correct: 3,
+    why: "Slow codas survive jitter about 99% of the time, fast ones roughly half. A single agreement number can hide the hard third of the corpus."
   },
   {
     q: "A detector reports a confident coda in a clip of pure background noise. What does that tell you?",
-    a: ["The noise is actually a coda", "There's no minimum signal-to-noise floor, so chance peaks can assemble into a 'coda'", "The clip is too short", "The sample rate is wrong"],
-    correct: 1,
-    why: "At 48 kHz over a few seconds, chance peaks clear a simple threshold often enough to fake three clicks. A SNR floor is what stops it."
+    a: ["The noise is actually a coda", "The clip is too short", "There's no minimum signal-to-noise floor, so chance peaks can assemble into a 'coda'", "The sample rate is wrong"],
+    correct: 2,
+    why: "At 48 kHz over a few seconds, chance peaks clear a simple threshold often enough to fake three clicks. An SNR floor is what stops it."
   },
   {
     q: "Which claim would you reject outright?",
-    a: ["“Whale-borne clips are counted more accurately than towed ones.”", "“We've decoded the meaning of several codas.”", "“Fast codas are harder to annotate consistently.”", "“The public corpus leaks its own labels.”"],
-    correct: 1,
+    a: ["\u201cWe've decoded the meaning of several codas.\u201d", "\u201cWhale-borne clips are counted more accurately than towed ones.\u201d", "\u201cFast codas are harder to annotate consistently.\u201d", "\u201cThe public corpus leaks its own labels.\u201d"],
+    correct: 0,
     why: "Structure is evidenced; meaning is not. No coda has been shown to stand for anything. Everything else on that list is measured."
   }
 ];
