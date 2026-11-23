@@ -81,6 +81,7 @@ def main(argv: list[str] | None = None) -> int:
         times, heights, med = E.peak_candidates(x, sr, p0)
         cache[c] = (times, heights, med)
         cache[c + ":dur"] = durations[c]
+        cache[c + ":sr"] = sr
     print(f"precomputed peaks for {len(clips)} clips")
 
     rng = np.random.default_rng(args.seed)
@@ -113,6 +114,18 @@ def main(argv: list[str] | None = None) -> int:
     print("  ", evaluate(val, cache, truth, window=False))
     print("\nvalidation, clicks inside the padded coda window:")
     print("  ", evaluate(val, cache, truth, window=True))
+
+    # The corpus is two recording setups wearing one name.  Reported separately
+    # because pooling them hides the single most useful fact about the detector:
+    # near-field audio is a different problem from far-field audio.
+    print("\nby recording rig, default profile, all labelled clips:")
+    cache["_p"] = E.resolve_profile("farfield")
+    towed = [c for c in clips if cache[c + ":sr"] <= 96000]
+    borne = [c for c in clips if cache[c + ":sr"] > 96000]
+    for name, group in (("towed hydrophone (<=96 kHz)", towed),
+                        ("whale-borne tag (>96 kHz)", borne)):
+        if group:
+            print(f"  {name:28s}", evaluate(group, cache, truth, window=False))
     return 0
 
 

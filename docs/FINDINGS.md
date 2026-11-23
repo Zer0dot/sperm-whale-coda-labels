@@ -26,7 +26,9 @@ across 1,391 clips — one sample at 44.1 kHz. That is not a statistical tendenc
 it is a file-level identity.
 
 `src/join.py` recovers the mapping for **1,391 of 1,501 clips (92.7%)**, all from
-clan EC1, spanning 2005–2015.
+clan EC1, spanning 2005–2015, across four units (F 773, J 278, A 199, U 141) and
+a mix of towed and whale-borne recording rigs — 199 of the joined clips are
+120 kHz animal-borne DTag audio.
 
 The remaining 110 (7.3%) do not form a long enough run to resolve. 82 of them are
 clip 1400 or later; 106 do match at least one published row on duration, but not
@@ -49,31 +51,40 @@ across 1,391 clips, which is strong, but it is an inference.
 ## 2. Given the true labels, the detector is mediocre — and that is the finding
 
 With 1,391 known click counts, accuracy becomes measurable per clip instead of
-inferred from a histogram. Using the default profile:
+inferred from a histogram. The single overall figure is 19.7% exact click count,
+36.7% within ±1, mean absolute error 2.49 clicks. That number is close to
+useless on its own, because the corpus is two different recording setups in a
+trench coat:
 
-| | result |
-|---|---|
-| exact click count | **19.7%** |
-| within ±1 click | 36.7% |
-| bias | +0.58 clicks |
-| mean absolute error | 2.49 clicks |
+| clips | n | exact click count | within ±1 | mean abs error |
+|---|---|---|---|---|
+| towed hydrophone (≤96 kHz) | 1,192 | **13.2%** | 30.2% | 2.73 |
+| whale-borne DTag (120 kHz) | 199 | **58.8%** | 75.4% | 1.08 |
 
-Roughly one coda in five is counted correctly. This is not a tuning failure:
-sweeping 60 parameter combinations (`src/calibrate.py`, 30% train / 70%
-validation) tops out around 22–26% exact, and the settings that score highest
-are not acceptable.
+The same code, the same settings, four and a half times the accuracy on
+whale-borne recordings. The reason is almost certainly multipath: a click
+recorded from a boat in shallow water arrives once directly and then again off
+the surface and seabed, so a naive envelope finds the echoes as extra clicks. A
+hydrophone suction-cupped to the whale's head hears the direct path and little
+else.
 
-**The trap worth recording.** The best-scoring settings merge any two peaks
-closer than 60 ms. That improves click-count agreement — and destroys real
-structure, because the published table contains genuine inter-click intervals
-down to 30 ms. Optimising for "does my count match" therefore selects a
-parameter that merges true clicks. Anyone working on this corpus should judge
-themselves on intervals, not on counts, or they will be rewarded for exactly
-this mistake.
+**This is the most actionable result in the repository.** If a project can
+obtain tag audio rather than towed audio, it is not making an incremental gain;
+it is working on a different problem.
 
-The honest conclusion: counting clicks in far-field recordings automatically is
-hard, and a detector is not a substitute for a person. That is an argument for
-the annotation protocol, not against it.
+A separate `tag` profile was built on the assumption that tag clicks need their
+own settings. It does not earn its place: 57.3% against 58.8% for the far-field
+profile. Simplicity wins, and the parameter that does matter is the echo floor —
+turning it off drops tag accuracy from 58.8% to 28.1%.
+
+**The trap worth recording.** Sweeping 60 parameter combinations
+(`src/calibrate.py`, 30% train / 70% validation) tops out around 22–26% exact on
+the pooled data, and the best-scoring settings merge any two peaks closer than
+60 ms. That improves click-count agreement while destroying real structure,
+because the published table contains genuine inter-click intervals down to
+30 ms. Optimising for "does my count match" therefore selects a parameter that
+merges true clicks. Anyone working on this corpus should judge themselves on
+intervals, not on counts, or they will be rewarded for exactly this mistake.
 
 ## 3. Fast codas are much harder to pin down than slow ones
 

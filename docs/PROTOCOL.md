@@ -93,9 +93,12 @@ pattern stable in 97% of perturbations" tells a reader what they need.
 
 ## Known limits
 
-- **Far-field recordings only, for now.** Boat and towed hydrophones. Coda
-  clicks from animal-borne tags differ in structure and are handled by a
-  separate profile.
+- **The corpus is mixed, and that matters.** About 14% of it is animal-borne
+  (DTag) audio; the rest is towed hydrophone. Clicks counted in towed recordings
+  are wrong far more often, because shallow water sends each click back off the
+  surface and the seabed and an unwary marker records the echoes as clicks.
+  Expect disagreement to be much higher on towed clips, and say which rig a
+  disagreement figure came from.
 - **Shallow water is harder.** More echo, more overlap.
 - **Small sample.** 1,501 clips is less than an hour of audio.
 - **These are measurements of what is audible, not of what the whale emitted.**

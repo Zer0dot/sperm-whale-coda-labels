@@ -66,8 +66,9 @@ the marks.
 
 - 1,501 clips, 45 minutes of audio, of which 1,391 are matched to published
   labels.
-- Detector against those labels: 19.7% exact click count, 36.7% within ±1,
-  mean absolute error 2.49 clicks.
+- Detector against those labels: 19.7% exact click count overall — but 58.8% on
+  the 199 whale-borne clips and 13.2% on the 1,192 towed ones. Near-field audio
+  is a different problem from far-field audio, and averaging them hides that.
 - Agreement machinery built and self-tested (17 checks), but no human
   annotator has marked anything yet — so there is no real IAA figure, and none
   is claimed.
@@ -77,8 +78,8 @@ the marks.
 - 45 minutes of audio is not much. Treat any claim about whale behaviour from
   this corpus as provisional.
 - The 0.5 s padding rule is inferred, not documented.
-- Far-field boat recordings only so far; animal-borne tags need their own
-  settings.
+- Roughly 14% of the corpus is animal-borne; the rest is towed hydrophone, where
+  multipath wrecks naive click counting.
 - Every acoustic difference between whales shows up as measurement noise here
   unless it is controlled for.
 
