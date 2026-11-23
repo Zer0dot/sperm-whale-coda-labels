@@ -1,0 +1,454 @@
+"use strict";
+/* Onboarding site engine. No dependencies, no storage, no network beyond
+   audio/manifest.json and the wav files beside it. */
+
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+
+/* ───────────────────────── FFT + spectrogram ───────────────────────── */
+function fft(re, im) {
+  const n = re.length;
+  for (let i = 1, j = 0; i < n; i++) {
+    let bit = n >> 1;
+    for (; j & bit; bit >>= 1) j ^= bit;
+    j ^= bit;
+    if (i < j) { [re[i], re[j]] = [re[j], re[i]]; [im[i], im[j]] = [im[j], im[i]]; }
+  }
+  for (let len = 2; len <= n; len <<= 1) {
+    const ang = -2 * Math.PI / len, wr = Math.cos(ang), wi = Math.sin(ang);
+    for (let i = 0; i < n; i += len) {
+      let cr = 1, ci = 0;
+      for (let k = 0; k < len / 2; k++) {
+        const ur = re[i + k], ui = im[i + k];
+        const vr = re[i + k + len / 2] * cr - im[i + k + len / 2] * ci;
+        const vi = re[i + k + len / 2] * ci + im[i + k + len / 2] * cr;
+        re[i + k] = ur + vr; im[i + k] = ui + vi;
+        re[i + k + len / 2] = ur - vr; im[i + k + len / 2] = ui - vi;
+        const ncr = cr * wr - ci * wi; ci = cr * wi + ci * wr; cr = ncr;
+      }
+    }
+  }
+}
+
+function spectrogram(buf, maxHz = 10000) {
+  const x = buf.getChannelData(0), sr = buf.sampleRate;
+  const N = 1024, hop = 256;                       // ~23 ms window, 5.8 ms hop
+  const frames = Math.max(1, Math.floor((x.length - N) / hop) + 1);
+  const maxBin = Math.min(N / 2, Math.round(maxHz / (sr / N)));
+  const hann = new Float32Array(N);
+  for (let i = 0; i < N; i++) hann[i] = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / (N - 1));
+  const mags = [], re = new Float64Array(N), im = new Float64Array(N);
+  let peak = 1e-12;
+  for (let f = 0; f < frames; f++) {
+    const off = f * hop;
+    for (let i = 0; i < N; i++) { re[i] = (x[off + i] || 0) * hann[i]; im[i] = 0; }
+    fft(re, im);
+    const m = new Float32Array(maxBin);
+    for (let b = 0; b < maxBin; b++) { m[b] = Math.hypot(re[b], im[b]); if (m[b] > peak) peak = m[b]; }
+    mags.push(m);
+  }
+  return { mags, frames, maxBin, peak, dur: buf.duration, sr, maxHz };
+}
+
+function paint(canvas, spec, marks, truth) {
+  const W = canvas.width, H = canvas.height, ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, W, H);
+  const { mags, frames, maxBin, peak, dur } = spec;
+  const LO = -72, HI = 0;
+  const off = document.createElement("canvas");
+  off.width = frames; off.height = maxBin;
+  const octx = off.getContext("2d"), img = octx.createImageData(frames, maxBin), d = img.data;
+  for (let f = 0; f < frames; f++) {
+    const col = mags[f];
+    for (let b = 0; b < maxBin; b++) {
+      const db = 20 * Math.log10(Math.max(col[b], 1e-12) / peak);
+      const t = Math.min(1, Math.max(0, (db - LO) / (HI - LO)));
+      const p = ((maxBin - 1 - b) * frames + f) * 4;
+      d[p]     = Math.round(255 * Math.pow(t, 1.8));
+      d[p + 1] = Math.round(255 * Math.pow(t, 1.15) * 0.94);
+      d[p + 2] = Math.round(255 * (t < 0.55 ? t * 1.45 : 0.79 + 0.21 * t));
+      d[p + 3] = 255;
+    }
+  }
+  octx.putImageData(img, 0, 0);
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(off, 0, 0, W, H);
+
+  // time axis
+  ctx.strokeStyle = "rgba(255,255,255,.10)"; ctx.fillStyle = "#7c879c";
+  ctx.font = "11px ui-monospace,monospace"; ctx.lineWidth = 1;
+  const step = dur > 2 ? 0.5 : 0.25;
+  for (let t = 0; t <= dur + 1e-9; t += step) {
+    const px = (t / dur) * W;
+    ctx.beginPath(); ctx.moveTo(px, 0); ctx.lineTo(px, H); ctx.stroke();
+    ctx.fillText(t.toFixed(step < 0.5 ? 2 : 1) + "s", px + 3, H - 5);
+  }
+  // freq axis
+  ctx.fillStyle = "#7c879c";
+  ctx.fillText((spec.maxHz / 1000).toFixed(0) + " kHz", 4, 13);
+
+  const line = (t, colour, dashed) => {
+    const px = (t / dur) * W;
+    ctx.save(); ctx.strokeStyle = colour; ctx.lineWidth = 2;
+    ctx.setLineDash(dashed ? [5, 4] : []);
+    ctx.beginPath(); ctx.moveTo(px, 0); ctx.lineTo(px, H); ctx.stroke(); ctx.restore();
+  };
+  (truth || []).forEach(t => line(t, "#ffffff88", true));
+  (marks || []).forEach(t => line(t, "#ffc861", false));
+}
+
+/* ───────────────────────── audio ───────────────────────── */
+let AC = null;
+const buffers = {};
+const specs = {};
+function ctx() { return AC || (AC = new (window.AudioContext || window.webkitAudioContext)()); }
+
+async function decode(entry) {
+  if (buffers[entry.id]) return buffers[entry.id];
+  const res = await fetch(entry.file);
+  if (!res.ok) throw new Error(`could not load ${entry.file}`);
+  const buf = await ctx().decodeAudioData(await res.arrayBuffer());
+  buffers[entry.id] = buf;
+  specs[entry.id] = spectrogram(buf);
+  return buf;
+}
+
+let playing = null;   // { src, startedAt, dur }
+
+function stopAll() {
+  if (playing && playing.src) { try { playing.src.stop(); } catch (e) {} }
+  playing = null;
+}
+
+function play(entry, onProgress) {
+  stopAll();
+  const src = ctx().createBufferSource();
+  src.buffer = buffers[entry.id];
+  src.connect(ctx().destination);
+  const start = ctx().currentTime;
+  src.start();
+  playing = { src, startedAt: start, dur: src.buffer.duration };
+  src.onended = () => { playing = null; onProgress && onProgress(null); };
+  return { start, dur: src.buffer.duration };
+}
+
+function progressTime() {
+  if (!playing) return null;
+  return Math.min(playing.dur, ctx().currentTime - playing.startedAt);
+}
+
+/* ───────────────────────── player card ───────────────────────── */
+function playerCard(el, entry) {
+  const mode = el.dataset.mode || "plain";
+  const marks = [];
+  let truthShown = false;
+  let scoring = false;
+
+  el.innerHTML = `
+    <div class="row">
+      <button class="primary play">▶ play</button>
+      <span class="pill ${entry.rig.includes("tag") ? "tag" : "towed"}">${entry.rig}</span>
+      <span class="pill">${entry.codaType}</span>
+      <span class="small dim time">—</span>
+    </div>
+    <canvas class="spec" width="1400" height="${mode === "mark" ? 220 : 180}"></canvas>
+    ${mode === "mark" ? `
+      <div class="row" style="margin-top:10px">
+        <button class="score">score my marks</button>
+        <button class="clear">clear</button>
+        <span class="score-readout score"></span>
+      </div>` : ""}
+    <details style="margin-bottom:0">
+      <summary>Show the answer</summary>
+      <div class="small"></div>
+    </details>`;
+
+  const canvas = el.querySelector("canvas");
+  const timeEl = el.querySelector(".time");
+  const btn = el.querySelector(".play");
+  const detail = el.querySelector("details div");
+  const readout = el.querySelector(".score-readout");
+
+  const redraw = () => paint(canvas, specs[entry.id], marks, truthShown ? entry.onsets : null);
+
+  const reveal = () => {
+    detail.innerHTML =
+      `<b>${entry.nClicks} clicks</b> · published type <code>${entry.codaType}</code><br>` +
+      `Gaps (ms): ${entry.icis.map(v => Math.round(v * 1000)).join(", ")}<br>` +
+      `Clan ${entry.clan}, unit ${entry.unit}, ${entry.date}.<br>` +
+      `<span class="dim">Our detector found ${entry.detected} click${entry.detected === 1 ? "" : "s"} ` +
+      `on this clip.</span>`;
+  };
+
+  el.querySelector("details").addEventListener("toggle", e => {
+    if (e.target.open) { truthShown = true; reveal(); redraw(); }
+    else { truthShown = false; redraw(); }
+  });
+
+  btn.onclick = async () => {
+    btn.disabled = true;
+    try { await decode(entry); } catch (err) { timeEl.textContent = String(err); btn.disabled = false; return; }
+    redraw();
+    btn.disabled = false;
+    if (playing) { stopAll(); btn.textContent = "▶ play"; timeEl.textContent = "—"; return; }
+    btn.textContent = "■ stop";
+    const { dur } = play(entry, () => { btn.textContent = "▶ play"; timeEl.textContent = "—"; });
+    timeEl.textContent = dur.toFixed(2) + " s";
+    const tick = () => {
+      const t = progressTime();
+      if (t === null) { btn.textContent = "▶ play"; timeEl.textContent = "—"; return; }
+      timeEl.textContent = t.toFixed(2) + " s";
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  };
+
+  if (mode === "mark") {
+    canvas.style.cursor = "crosshair";
+    canvas.addEventListener("click", ev => {
+      if (!specs[entry.id] || scoring) return;
+      const r = canvas.getBoundingClientRect();
+      const t = ((ev.clientX - r.left) / r.width) * specs[entry.id].dur;
+      const snapped = Math.round(t / 0.005) * 0.005;
+      const near = marks.findIndex(m => Math.abs(m - snapped) < 0.012);
+      if (near >= 0) marks.splice(near, 1); else marks.push(snapped);
+      marks.sort((a, b) => a - b);
+      redraw();
+    });
+    el.querySelector(".clear").onclick = () => {
+      marks.length = 0; scoring = false; readout.textContent = ""; redraw();
+    };
+    el.querySelector(".score").onclick = () => {
+      if (!marks.length) { readout.innerHTML = `<span class="dim">click the spectrogram first</span>`; return; }
+      scoring = true; truthShown = true; redraw(); reveal();
+      const TOL = 0.030;
+      const used = new Set();
+      let hit = 0;
+      for (const m of marks) {
+        for (let i = 0; i < entry.onsets.length; i++) {
+          if (!used.has(i) && Math.abs(entry.onsets[i] - m) <= TOL) { used.add(i); hit++; break; }
+        }
+      }
+      const prec = hit / marks.length, rec = hit / entry.onsets.length;
+      const f1 = (prec + rec) ? 2 * prec * rec / (prec + rec) : 0;
+      const cls = f1 >= 0.9 ? "ok" : f1 >= 0.6 ? "" : "no";
+      readout.innerHTML =
+        `you found <b>${hit}</b> of ${entry.onsets.length} · precision ${prec.toFixed(2)} · ` +
+        `recall ${rec.toFixed(2)} · <span class="${cls}"><b>F1 ${f1.toFixed(2)}</b></span>` +
+        `<br><span class="dim">within 30 ms counts as a match. Dashed white = published; amber = yours.</span>`;
+    };
+  }
+
+  return { redraw, entry };
+}
+
+/* ───────────────────────── lesson 4: the leak ───────────────────────── */
+function leakDemo(manifest) {
+  const box = $("#leakBtns"), out = $("#leakOut");
+  if (!box) return;
+  manifest.slice(0, 5).forEach(e => {
+    const b = document.createElement("button");
+    b.textContent = `clip ${e.clip} · ${e.rig.includes("tag") ? "tag" : "towed"} · ${e.fileDur.toFixed(2)} s`;
+    b.onclick = () => {
+      out.innerHTML =
+        `<code>file is ${e.fileDur.toFixed(3)} s</code> → subtract the 1.000 s of padding → ` +
+        `the coda lasted <b>${(e.fileDur - 1).toFixed(3)} s</b>.<br>` +
+        `The published table has one row in this session with that duration:<br><br>` +
+        `<b>${e.codaType}</b> · ${e.nClicks} clicks · clan ${e.clan} · unit ${e.unit} · ${e.date}.<br>` +
+        `<span class="dim">No audio analysis. That's the leak.</span>`;
+    };
+    box.appendChild(b);
+  });
+}
+
+/* ───────────────────────── lesson 6: stability ───────────────────────── */
+function stabilityDemo(manifest) {
+  const fast = manifest.find(e => e.id === "fast");
+  const slow = manifest.find(e => e.id === "slow");
+  const slider = $("#jit"), label = $("#jitv");
+  const outF = $("#stabFast"), outS = $("#stabSlow");
+  if (!fast || !slow || !slider) return;
+
+  const gauss = () => {
+    let u = 0, v = 0;
+    while (!u) u = Math.random();
+    while (!v) v = Math.random();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  };
+
+  function survives(onsets, jitterMs, trials = 250) {
+    const base = onsets.slice(1).map((t, i) => t - onsets[i]);
+    const scale = base.reduce((a, b) => a + b, 0) / base.length;
+    let ok = 0;
+    for (let k = 0; k < trials; k++) {
+      const p = onsets.map(t => t + (jitterMs / 1000) * gauss()).sort((a, b) => a - b);
+      let good = true;
+      const d = p.slice(1).map((t, i) => Math.abs((t - p[i]) - base[i]));
+      const mean = d.reduce((a, b) => a + b, 0) / d.length;
+      const max = Math.max(...d);
+      if (!(mean <= 0.15 * scale && max <= 0.30 * scale)) good = false;
+      if (good) ok++;
+    }
+    return ok / trials;
+  }
+
+  function update() {
+    const j = Number(slider.value);
+    label.textContent = j + " ms";
+    const f = survives(fast.onsets, j), s = survives(slow.onsets, j);
+    outF.textContent = Math.round(f * 100) + "%";
+    outF.style.color = f >= 0.9 ? "var(--good)" : f >= 0.6 ? "var(--warm)" : "var(--bad)";
+    outS.textContent = Math.round(s * 100) + "%";
+    outS.style.color = s >= 0.9 ? "var(--good)" : s >= 0.6 ? "var(--warm)" : "var(--bad)";
+  }
+  slider.addEventListener("input", update);
+  update();
+}
+
+/* ───────────────────────── flashcards ───────────────────────── */
+const CARDS = [
+  ["Coda", "A short rhythmic burst of clicks, used socially. The unit everyone studies."],
+  ["Click", "One pulse inside a coda. Sperm whale clicks are the loudest sounds made by any animal."],
+  ["ICI", "Inter-click interval — the gap between consecutive clicks. The actual measurement of a coda."],
+  ["Clan", "A group of whales sharing a coda repertoire. Learned, not genetic — this is culture."],
+  ["Unit", "A smaller social group within a clan; the whales that actually swim together."],
+  ["Why we mark clicks, not coda names", "At least three incompatible naming schemes exist. Times are objective; names are conventions."],
+  ["1+1+3", "A coda described as click, click, then three. Dominica's most common shape."],
+  ["5R1", "Five evenly spaced clicks, then a long gap. 'R' means regular run."],
+  ["DSWP", "Dominica Sperm Whale Project — the long-running fieldwork that produced the public audio and the coda table."],
+  ["DTag", "A suction-cupped tag that records from the whale itself. Near-field audio: few echoes."],
+  ["Towed hydrophone", "A microphone dragged behind a boat. Far-field: shallow water sends every click back as echoes."],
+  ["Multipath", "One click arriving several times — direct, then off the surface and seabed. Looks like extra clicks."],
+  ["Why 59% vs 12%", "Exact click-count accuracy on whale-borne vs towed clips. Same code; multipath is the difference."],
+  ["The leak", "Public clips are one coda plus exactly 1.000 s of padding, so file length reveals the label."],
+  ["Why the leak matters", "Any evaluation treating those clips as unlabelled is invalid — and random splits don't fix it."],
+  ["IAA", "Inter-annotator agreement: give the same audio to two people and measure how far apart they land."],
+  ["F1", "One number combining precision (of the clicks you marked, how many were real) and recall (of the real ones, how many you found)."],
+  ["Stability", "Jitter the clicks by the observed disagreement and ask whether the derived label survives. A label that survives 99% is safe; 46% is not."],
+  ["Why fast codas are harder", "A fixed timing error is a bigger fraction of a 90 ms gap than a 300 ms gap, so the rhythm flips more easily."],
+  ["Why we don't use coda names in code", "Names bake in a controversy. The pipeline emits times; a declared step derives names."],
+  ["What '3-40 clicks' means", "Codas range widely across populations; the published Dominica table records 1 to 10 per coda."],
+  ["Does any of this prove meaning?", "No. Structure is evidenced; meaning is not. Nobody has shown a coda stands for anything."]
+];
+
+(function flashcards() {
+  const box = $("#flash"), text = $("#flashText"), meta = $("#flashMeta");
+  if (!box) return;
+  let i = 0, back = false;
+  const show = () => {
+    const [q, a] = CARDS[i];
+    text.textContent = back ? a : q;
+    box.classList.toggle("back", back);
+    meta.textContent = `${i + 1} / ${CARDS.length}` + (back ? "" : " · click to flip");
+  };
+  box.onclick = () => { back = !back; show(); };
+  $("#fFlip").onclick = e => { e.stopPropagation(); back = !back; show(); };
+  $("#fNext").onclick = e => { e.stopPropagation(); i = (i + 1) % CARDS.length; back = false; show(); };
+  $("#fPrev").onclick = e => { e.stopPropagation(); i = (i - 1 + CARDS.length) % CARDS.length; back = false; show(); };
+  window.addEventListener("keydown", e => {
+    if (e.target.tagName === "INPUT") return;
+    if (e.key === "ArrowRight") { i = (i + 1) % CARDS.length; back = false; show(); }
+    if (e.key === "ArrowLeft") { i = (i - 1 + CARDS.length) % CARDS.length; back = false; show(); }
+    if (e.key === " ") { e.preventDefault(); back = !back; show(); }
+  });
+  show();
+})();
+
+/* ───────────────────────── quiz ───────────────────────── */
+const QUIZ = [
+  {
+    q: "A colleague reports “our detector is 94% accurate on sperm whale codas.” What's the first thing you ask?",
+    a: ["Which recording rig, and what does 'accurate' mean per clip?", "How big is the training set?", "Which coda types does it cover?", "Is the code open source?"],
+    correct: 0,
+    why: "A pooled accuracy figure across towed and whale-borne audio describes neither. And 'accurate' usually hides whether it's a classification score or a per-clip click count."
+  },
+  {
+    q: "Why does the pipeline output click times instead of coda names like 5R1?",
+    a: ["Names are copyrighted", "Because several incompatible naming schemes exist, so names are derived later under a declared scheme", "Because names are longer to store", "Because whales don't have names"],
+    correct: 1,
+    why: "Times are objective; names are conventions. Baking a name in makes the data incomparable with other labs."
+  },
+  {
+    q: "You find a public dataset of whale audio with no metadata. Why might it still be labelled?",
+    a: ["Whale songs are recognisable by ear", "The file duration can encode the label if the clips were cut from a published table", "It can't be", "The sample rate gives it away"],
+    correct: 1,
+    why: "Exactly what happened here: each clip is one coda plus 1.000 s of padding, so duration − 1.000 recovers the published label."
+  },
+  {
+    q: "Two annotators agree on a coda 99% of the time. What's still missing before you trust it?",
+    a: ["Nothing, that's excellent", "Whether that figure covers fast codas too — they're far more fragile", "Whether they used the same software", "Whether they're both researchers"],
+    correct: 1,
+    why: "Slow codas survive jitter ~99% of the time, fast ones roughly half. A single agreement number can hide the hard third of the corpus."
+  },
+  {
+    q: "A detector reports a confident coda in a clip of pure background noise. What does that tell you?",
+    a: ["The noise is actually a coda", "There's no minimum signal-to-noise floor, so chance peaks can assemble into a 'coda'", "The clip is too short", "The sample rate is wrong"],
+    correct: 1,
+    why: "At 48 kHz over a few seconds, chance peaks clear a simple threshold often enough to fake three clicks. A SNR floor is what stops it."
+  },
+  {
+    q: "Which claim would you reject outright?",
+    a: ["“Whale-borne clips are counted more accurately than towed ones.”", "“We've decoded the meaning of several codas.”", "“Fast codas are harder to annotate consistently.”", "“The public corpus leaks its own labels.”"],
+    correct: 1,
+    why: "Structure is evidenced; meaning is not. No coda has been shown to stand for anything. Everything else on that list is measured."
+  }
+];
+
+(function quiz() {
+  const box = $("#quizBox");
+  if (!box) return;
+  let answered = 0, right = 0;
+  QUIZ.forEach((item, qi) => {
+    const el = document.createElement("div");
+    el.className = "q";
+    el.innerHTML = `<div class="stem">${qi + 1}. ${item.q}</div>`;
+    const why = document.createElement("div");
+    why.className = "why";
+    why.textContent = item.why;
+    item.a.forEach((optText, oi) => {
+      const b = document.createElement("button");
+      b.className = "opt";
+      b.textContent = optText;
+      b.onclick = () => {
+        if (el.dataset.done) return;
+        el.dataset.done = "1";
+        answered++;
+        if (oi === item.correct) { b.classList.add("correct"); right++; }
+        else {
+          b.classList.add("wrong");
+          el.querySelectorAll(".opt")[item.correct].classList.add("correct");
+        }
+        why.classList.add("show");
+        if (answered === QUIZ.length) {
+          const s = $("#quizScore");
+          s.style.display = "block";
+          s.innerHTML = `<b>${right} / ${QUIZ.length}</b> — ` +
+            (right === QUIZ.length ? "you can review my work."
+              : right >= 4 ? "solid. Re-read lesson 5 and the review checklist."
+                : "worth another pass through lessons 1–5.");
+        }
+      };
+      el.appendChild(b);
+    });
+    el.appendChild(why);
+    box.appendChild(el);
+  });
+})();
+
+/* ───────────────────────── boot ───────────────────────── */
+(async function boot() {
+  let manifest = [];
+  try {
+    manifest = await (await fetch("audio/manifest.json")).json();
+  } catch (e) {
+    console.error("manifest missing", e);
+  }
+  const byId = Object.fromEntries(manifest.map(m => [m.id, m]));
+  $$(".player").forEach(el => {
+    const entry = byId[el.dataset.clip];
+    if (entry) playerCard(el, entry);
+    else el.textContent = "audio unavailable";
+  });
+  leakDemo(manifest);
+  stabilityDemo(manifest);
+})();

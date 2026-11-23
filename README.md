@@ -36,6 +36,7 @@ it is not a nicety; it is the method.
 | `tools/marker.html` | Browser tool: open a wav, see the spectrogram, correct the marks |
 | `docs/PROTOCOL.md` | The rulebook annotators follow, including edge cases |
 | `docs/FINDINGS.md` | What the audio actually shows, including the label leak |
+| `site/` | Interactive onboarding course — 7 lessons with real audio, flashcards, quiz |
 | `tests/` | Synthetic regression tests for the extractor, the join, and agreement |
 
 ## Quick start

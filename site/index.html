@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sperm whale codas — a speedrun</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Onboarding · 20 minutes</div>
+    <h1>Sperm whale codas,<br>for someone who has to check my work</h1>
+    <p class="lead">You don't need the biology. You need to know what a coda is, where the
+      data comes from, and the four questions that catch a bad claim.</p>
+    <div class="goal">
+      <b>The goal:</b> at the end you can review a coda result and say
+      <em>“this number is measured on the right subset, or it isn't.”</em>
+    </div>
+  </div>
+</header>
+
+<nav><div class="wrap">
+  <a href="#l1">1 · What's a coda</a>
+  <a href="#l2">2 · Clicks &amp; gaps</a>
+  <a href="#l3">3 · Names are a trap</a>
+  <a href="#l4">4 · The data</a>
+  <a href="#l5">5 · Where it breaks</a>
+  <a href="#l6">6 · Trust</a>
+  <a href="#l7">7 · Reviewing me</a>
+  <a href="#cards">Flashcards</a>
+  <a href="#quiz">Quiz</a>
+</div></nav>
+
+<main class="wrap">
+
+<!-- ───────────────────────────── 1 ───────────────────────────── -->
+<section class="lesson" id="l1">
+  <h2><span class="num">1</span>What's a coda</h2>
+  <p>Sperm whales are the loudest animal on earth. When they meet, they trade short rhythmic
+    bursts of clicks. A burst is called a <b>coda</b>.</p>
+  <p>Codas are learned, not inherited — whales in different <b>clans</b> use different rhythms.
+    That's why they matter: this is one of the strongest cases of culture in a non-human animal.</p>
+
+  <div class="player" data-clip="tag113"></div>
+
+  <div class="card tight">
+    <b>Three words you need.</b>
+    <p class="small" style="margin:8px 0 0">
+      <b>Coda</b> — the whole burst. &nbsp;·&nbsp;
+      <b>Click</b> — one pulse inside it. &nbsp;·&nbsp;
+      <b>ICI</b> — the gap between one click and the next (<i>inter-click interval</i>).
+    </p>
+  </div>
+
+  <p class="dim small">What we don't know: whether codas <em>mean</em> anything. Nobody has
+    shown that. Anyone who says we've decoded whale language is selling something.</p>
+</section>
+
+<!-- ───────────────────────────── 2 ───────────────────────────── -->
+<section class="lesson" id="l2">
+  <h2><span class="num">2</span>Clicks and gaps</h2>
+  <p>A coda is defined by <em>when</em> each click happens. Everything else is derived from that.</p>
+  <p><b>Try it.</b> Listen, then click the spectrogram where each click starts. You'll be scored
+    against the published answer.</p>
+
+  <div class="player" data-clip="slow" data-mode="mark"></div>
+
+  <p class="dim small">Clicks look like vertical stripes. Ignore the faint horizontal haze — that's
+    background noise. If you put two marks 2–5 ms apart, that's one click: sperm whale clicks have a
+    multi-pulse structure and the tool merges them.</p>
+</section>
+
+<!-- ───────────────────────────── 3 ───────────────────────────── -->
+<section class="lesson" id="l3">
+  <h2><span class="num">3</span>Names are a trap</h2>
+  <p>Researchers name codas by their rhythm. The notation looks like <code>1+1+3</code> or
+    <code>5R1</code>: groups of clicks, and <code>R</code> for a run of evenly spaced ones.</p>
+  <p>Here's the problem. Two published schemes name the <em>same</em> coda differently, and a third
+    numbers them.</p>
+
+  <h3>Three shapes worth recognising</h3>
+  <p class="dim small">All three are real codas, all recorded by a tag on the whale. Listen to how
+    different the rhythms are — that difference is what the names describe.</p>
+  <div class="grid3">
+    <div class="player" data-clip="tag113"></div>
+    <div class="player" data-clip="tag5r1"></div>
+    <div class="player" data-clip="tag4r2"></div>
+  </div>
+
+  <p>Now the naming problem. This next one is a single coda:</p>
+  <div class="player" data-clip="towed-clean" data-mode="plain"></div>
+
+  <div class="card">
+    <table style="width:100%;border-collapse:collapse;font-size:14.5px">
+      <tr style="color:var(--dim);text-align:left"><th style="padding:6px 0">Scheme</th><th>What this coda is called</th></tr>
+      <tr><td style="padding:6px 0">Dominica (the one we use)</td><td><code>5R1</code></td></tr>
+      <tr><td style="padding:6px 0">Grouped/intervals</td><td><code>4+1</code></td></tr>
+      <tr><td style="padding:6px 0">Descriptive</td><td><code>four regular, one long gap</code></td></tr>
+    </table>
+    <p class="small dim" style="margin:12px 0 0">Same audio. Three labels. None is wrong.</p>
+  </div>
+
+  <p><b>So our pipeline never names a coda.</b> It records click times. Names get derived later,
+    under a scheme we declare. That is the single most important design decision in the repo — if we
+    baked a name in, our data would stop being comparable with anyone else's.</p>
+</section>
+
+<!-- ───────────────────────────── 4 ───────────────────────────── -->
+<section class="lesson" id="l4">
+  <h2><span class="num">4</span>The data, and the trick</h2>
+  <p>Public coda data is two halves that don't fit together: <b>1,501 audio clips</b> (45 minutes)
+    with no labels, and <b>8,719 measurements</b> in a spreadsheet with no audio.</p>
+  <p>I assumed we'd have to label the audio ourselves. We didn't. Each clip turned out to be one
+    published coda with exactly <b>half a second of padding</b> at each end — so the label is
+    hiding in the file length.</p>
+
+  <div class="card" id="leak">
+    <b>Try the leak.</b> <span class="dim small">Pick a clip; I'll tell you what its file length reveals.</span>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0" id="leakBtns"></div>
+    <div id="leakOut" class="small dim">—</div>
+  </div>
+
+  <div class="card tight" style="border-left:3px solid var(--bad)">
+    <b>The consequence.</b>
+    <p class="small" style="margin:8px 0 0">That corpus leaks its own labels. Any result that treats
+      those clips as unlabelled audio is invalid, and random train/test splits don't fix it. But it's
+      also a gift: <b>1,382 clips with known answers</b> — a free benchmark.</p>
+  </div>
+</section>
+
+<!-- ───────────────────────────── 5 ───────────────────────────── -->
+<section class="lesson" id="l5">
+  <h2><span class="num">5</span>Where the machine breaks</h2>
+  <p>Same task, two recordings. Listen and watch: the left is a hydrophone suction-cupped to the
+    whale. The right is a hydrophone towed behind a boat in shallow water.</p>
+
+  <div class="grid2">
+    <div class="player" data-clip="tag113"></div>
+    <div class="player" data-clip="towed-echoes"></div>
+  </div>
+
+  <p>In shallow water each click hits the surface and the seabed and comes back. Those echoes look
+    exactly like extra clicks to a simple detector.</p>
+  <p>That single fact decides whether the pipeline works:</p>
+
+  <div class="grid2">
+    <div class="card" style="text-align:center">
+      <div style="font-size:38px;font-weight:700;color:var(--good)">59%</div>
+      <div class="dim small">click counts exactly right<br>on 199 whale-borne clips</div>
+    </div>
+    <div class="card" style="text-align:center">
+      <div style="font-size:38px;font-weight:700;color:var(--bad)">12%</div>
+      <div class="dim small">click counts exactly right<br>on 1,183 towed clips</div>
+    </div>
+  </div>
+
+  <p class="dim small">Pooled, that's 19% — a number that describes neither half. <b>When you see a
+    single accuracy figure from me, ask which rig it's from.</b></p>
+</section>
+
+<!-- ───────────────────────────── 6 ───────────────────────────── -->
+<section class="lesson" id="l6">
+  <h2><span class="num">6</span>When is a label trustworthy</h2>
+  <p>Give the same clip to two people and their clicks won't land in identical places. The question
+    is whether the <em>label</em> survives that wobble.</p>
+  <p><b>Drag the slider.</b> It jitters every click by that much and re-reads the rhythm.</p>
+
+  <div class="card" id="stab">
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <label class="small dim" for="jit">Disagreement</label>
+      <input id="jit" type="range" min="0" max="30" value="10" style="flex:1;min-width:180px">
+      <span id="jitv" class="small" style="width:58px;text-align:right">10 ms</span>
+    </div>
+    <div class="grid2" style="margin-top:16px">
+      <div><div class="small dim">Fast coda (clicks ~90 ms apart)</div>
+        <div id="stabFast" style="font-size:30px;font-weight:700">—</div></div>
+      <div><div class="small dim">Slow coda (clicks ~300 ms apart)</div>
+        <div id="stabSlow" style="font-size:30px;font-weight:700">—</div></div>
+    </div>
+    <p class="small dim" style="margin:14px 0 0">Numbers are the share of re-reads that keep the
+      rhythm within 15%.</p>
+  </div>
+
+  <p>This is <b>inter-annotator agreement</b> — IAA. Without it, “we labelled 500 codas” has no
+    floor under it. With it, you can say “two people found the same clicks to within 7 ms” and a
+    reader can decide whether to believe you.</p>
+  <p class="dim small">Note what the slider shows: <b>agreement depends on how fast the whale was
+    clicking.</b> Any agreement figure that doesn't say which codas it covers is close to meaningless.</p>
+</section>
+
+<!-- ───────────────────────────── 7 ───────────────────────────── -->
+<section class="lesson" id="l7">
+  <h2><span class="num">7</span>Reviewing my work</h2>
+  <p>Five questions. If a claim fails any of them, it isn't ready.</p>
+  <ul class="check">
+    <li><span class="mk">1</span><div class="q"><b>Does a script print this number?</b>
+      <span>Every figure in our docs should come out of a command you can run. If I quote something
+      I measured once and never scripted, that's a defect.</span></div></li>
+    <li><span class="mk">2</span><div class="q"><b>Is it split by recording rig?</b>
+      <span>Towed and whale-borne are different problems. A pooled accuracy number is hiding the
+      only thing that matters.</span></div></li>
+    <li><span class="mk">3</span><div class="q"><b>Does agreement say which codas?</b>
+      <span>Fast codas are fragile, slow ones aren't. One IAA number across both is an average of
+      two different things.</span></div></li>
+    <li><span class="mk">4</span><div class="q"><b>Are we pretending the corpus is unlabelled?</b>
+      <span>It isn't. Any evaluation on the public clips must account for the leak.</span></div></li>
+    <li><span class="mk">5</span><div class="q"><b>Is a single number standing in for a
+      distribution?</b>
+      <span>“Median 6 clicks” can be true while every clip is wrong. Ask for the per-clip error,
+      not the summary.</span></div></li>
+  </ul>
+
+  <details>
+    <summary>What a bad answer looks like</summary>
+    <p class="small">“The detector is 95% accurate on codas.” No rig, no per-clip error, no script,
+      measured on a corpus that leaks its labels. Every one of those is a hole a reviewer should
+      push on — and I will have made some of these mistakes. That's what this page is for.</p>
+  </details>
+</section>
+
+<!-- ───────────────────────────── cards ───────────────────────────── -->
+<section class="lesson" id="cards">
+  <h2>Flashcards</h2>
+  <p class="dim">Click to flip. <span class="kbd">←</span> <span class="kbd">→</span> to move,
+    <span class="kbd">space</span> to flip.</p>
+  <div class="deck">
+    <div class="flash" id="flash"><span id="flashText">Loading…</span></div>
+    <div class="meta" id="flashMeta"></div>
+    <div style="display:flex;gap:10px">
+      <button id="fPrev">← prev</button>
+      <button id="fFlip" class="primary">flip</button>
+      <button id="fNext">next →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────────── quiz ───────────────────────────── -->
+<section class="lesson" id="quiz">
+  <h2>Quiz</h2>
+  <p class="dim">Six questions. No score kept — the explanations are the point.</p>
+  <div id="quizBox"></div>
+  <div class="card" id="quizScore" style="display:none"></div>
+</section>
+
+<footer>
+  <p><b>Audio</b> — Dominica Sperm Whale Project, used under CC-BY-4.0, trimmed and resampled for
+    teaching. Labels from the published Dominica coda table. Nothing here is redistributed beyond
+    fair teaching use.</p>
+  <p><b>Code and findings</b> — <code>Zer0dot/sperm-whale-coda-labels</code>. Numbers quoted on this
+    page are reproduced by <code>src/calibrate.py</code>.</p>
+</footer>
+
+</main>
+<script src="app.js"></script>
+</body>
+</html>
