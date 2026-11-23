@@ -2,144 +2,32 @@
  {
   "id": "tag113",
   "file": "audio/tag113.wav",
-  "clip": "1211",
+  "clip": "1206",
   "codaType": "1+1+3",
   "nClicks": 5,
   "icis": [
-   0.258,
-   0.275,
-   0.174,
+   0.276,
+   0.287,
+   0.197,
    0.138
   ],
   "onsets": [
    0.3,
-   0.558,
-   0.833,
-   1.007,
-   1.145
+   0.576,
+   0.863,
+   1.06,
+   1.198
   ],
   "rig": "whale-borne tag",
   "clan": "EC1",
   "unit": "A",
   "date": "02-03-2015",
-  "fileDur": 1.845,
-  "detected": 5,
-  "dur": 1.445,
-  "note": "Whale-borne tag. Published type 1+1+3. The machine got this one right."
- },
- {
-  "id": "tag4r2",
-  "file": "audio/tag4r2.wav",
-  "clip": "1320",
-  "codaType": "4R2",
-  "nClicks": 4,
-  "icis": [
-   0.302,
-   0.316,
-   0.303
-  ],
-  "onsets": [
-   0.3,
-   0.602,
-   0.918,
-   1.221
-  ],
-  "rig": "whale-borne tag",
-  "clan": "EC1",
-  "unit": "A",
-  "date": "02-03-2015",
-  "fileDur": 1.921,
-  "detected": 4,
-  "dur": 1.521,
-  "note": "Whale-borne tag. Published type 4R2. The machine got this one right."
+  "fileDur": 1.898,
+  "detected": 5
  },
  {
   "id": "tag5r1",
   "file": "audio/tag5r1.wav",
-  "clip": "1340",
-  "codaType": "5R1",
-  "nClicks": 5,
-  "icis": [
-   0.097,
-   0.105,
-   0.071,
-   0.077
-  ],
-  "onsets": [
-   0.3,
-   0.397,
-   0.502,
-   0.572,
-   0.65
-  ],
-  "rig": "whale-borne tag",
-  "clan": "EC1",
-  "unit": "A",
-  "date": "02-03-2015",
-  "fileDur": 1.35,
-  "detected": 5,
-  "dur": 0.95,
-  "note": "Whale-borne tag. Published type 5R1. The machine got this one right."
- },
- {
-  "id": "towed-echoes",
-  "file": "audio/towed-echoes.wav",
-  "clip": "4",
-  "codaType": "1+1+3",
-  "nClicks": 5,
-  "icis": [
-   0.397,
-   0.373,
-   0.165,
-   0.175
-  ],
-  "onsets": [
-   0.3,
-   0.697,
-   1.069,
-   1.234,
-   1.409
-  ],
-  "rig": "towed hydrophone",
-  "clan": "EC1",
-  "unit": "F",
-  "date": "23/01/2005",
-  "fileDur": 2.109,
-  "detected": 10,
-  "dur": 1.709,
-  "note": "Towed hydrophone. The published coda has few clicks; the machine finds many more, because each click returns off the surface."
- },
- {
-  "id": "towed-clean",
-  "file": "audio/towed-clean.wav",
-  "clip": "1037",
-  "codaType": "5R1",
-  "nClicks": 5,
-  "icis": [
-   0.088,
-   0.094,
-   0.072,
-   0.067
-  ],
-  "onsets": [
-   0.3,
-   0.388,
-   0.482,
-   0.554,
-   0.621
-  ],
-  "rig": "towed hydrophone",
-  "clan": "EC1",
-  "unit": "J",
-  "date": "13/04/2010",
-  "fileDur": 1.321,
-  "detected": 5,
-  "dur": 0.921,
-  "note": "Towed hydrophone, and the machine got it right. Same rig, different luck."
- },
- {
-  "id": "fast",
-  "file": "audio/fast.wav",
   "clip": "1260",
   "codaType": "5R1",
   "nClicks": 5,
@@ -161,36 +49,134 @@
   "unit": "A",
   "date": "02-03-2015",
   "fileDur": 1.31,
-  "detected": 5,
-  "dur": 0.91,
-  "note": "A fast coda: clicks about 80 ms apart. Hard to time consistently."
+  "detected": 5
  },
  {
-  "id": "slow",
-  "file": "audio/slow.wav",
-  "clip": "1398",
-  "codaType": "1+1+3",
-  "nClicks": 5,
+  "id": "tag4r2",
+  "file": "audio/tag4r2.wav",
+  "clip": "1237",
+  "codaType": "4R2",
+  "nClicks": 4,
   "icis": [
-   0.506,
-   0.484,
-   0.226,
-   0.204
+   0.376,
+   0.326,
+   0.329
   ],
   "onsets": [
    0.3,
-   0.806,
-   1.29,
-   1.516,
-   1.72
+   0.676,
+   1.001,
+   1.331
   ],
   "rig": "whale-borne tag",
   "clan": "EC1",
   "unit": "A",
   "date": "02-03-2015",
-  "fileDur": 2.42,
-  "detected": 5,
-  "dur": 2.02,
-  "note": "A slow coda: clicks a third of a second apart. The same timing error barely moves it."
+  "fileDur": 2.031,
+  "detected": 4
+ },
+ {
+  "id": "towed-echoes",
+  "file": "audio/towed-echoes.wav",
+  "clip": "2",
+  "codaType": "1+1+3",
+  "nClicks": 5,
+  "icis": [
+   0.405,
+   0.403,
+   0.167,
+   0.176
+  ],
+  "onsets": [
+   0.3,
+   0.705,
+   1.109,
+   1.275,
+   1.451
+  ],
+  "rig": "towed hydrophone",
+  "clan": "EC1",
+  "unit": "F",
+  "date": "23/01/2005",
+  "fileDur": 2.151,
+  "detected": 9
+ },
+ {
+  "id": "towed-clean",
+  "file": "audio/towed-clean.wav",
+  "clip": "108",
+  "codaType": "5R1",
+  "nClicks": 5,
+  "icis": [
+   0.086,
+   0.104,
+   0.081,
+   0.063
+  ],
+  "onsets": [
+   0.3,
+   0.386,
+   0.49,
+   0.571,
+   0.634
+  ],
+  "rig": "towed hydrophone",
+  "clan": "EC1",
+  "unit": "F",
+  "date": "23/01/2005",
+  "fileDur": 1.334,
+  "detected": 5
+ },
+ {
+  "id": "fast",
+  "file": "audio/fast.wav",
+  "clip": "1261",
+  "codaType": "5R1",
+  "nClicks": 5,
+  "icis": [
+   0.1,
+   0.101,
+   0.071,
+   0.07
+  ],
+  "onsets": [
+   0.3,
+   0.4,
+   0.501,
+   0.572,
+   0.641
+  ],
+  "rig": "whale-borne tag",
+  "clan": "EC1",
+  "unit": "A",
+  "date": "02-03-2015",
+  "fileDur": 1.341,
+  "detected": 5
+ },
+ {
+  "id": "slow",
+  "file": "audio/slow.wav",
+  "clip": "1392",
+  "codaType": "1+1+3",
+  "nClicks": 5,
+  "icis": [
+   0.496,
+   0.375,
+   0.185,
+   0.191
+  ],
+  "onsets": [
+   0.3,
+   0.796,
+   1.171,
+   1.356,
+   1.547
+  ],
+  "rig": "whale-borne tag",
+  "clan": "EC1",
+  "unit": "A",
+  "date": "02-03-2015",
+  "fileDur": 2.247,
+  "detected": 5
  }
 ]

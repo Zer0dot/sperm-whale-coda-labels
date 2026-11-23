@@ -169,15 +169,20 @@ function playerCard(el, entry) {
   const detail = el.querySelector("details div");
   const readout = el.querySelector(".score-readout");
 
-  const redraw = () => paint(canvas, specs[entry.id], marks, truthShown ? entry.onsets : null);
+  const redraw = () => {
+    if (!specs[entry.id]) return;   // nothing decoded yet: nothing to paint
+    paint(canvas, specs[entry.id], marks, truthShown ? entry.onsets : null);
+  };
 
   const reveal = () => {
     detail.innerHTML =
       `<b>${entry.nClicks} clicks</b> · published type <code>${entry.codaType}</code><br>` +
       `Gaps (ms): ${entry.icis.map(v => Math.round(v * 1000)).join(", ")}<br>` +
-      `Clan ${entry.clan}, unit ${entry.unit}, ${entry.date}.<br>` +
-      `<span class="dim">Our detector found ${entry.detected} click${entry.detected === 1 ? "" : "s"} ` +
-      `on this clip.</span>`;
+      `Clan ${entry.clan}, unit ${entry.unit}, ${entry.date}.` +
+      (entry.detected == null ? "" :
+        `<br><span class="dim">Our detector found ${entry.detected} click` +
+        `${entry.detected === 1 ? "" : "s"} on this clip` +
+        `${entry.detected === entry.nClicks ? " — right." : "."}</span>`);
   };
 
   el.querySelector("details").addEventListener("toggle", e => {
@@ -223,7 +228,9 @@ function playerCard(el, entry) {
     };
     el.querySelector(".score").onclick = () => {
       if (!marks.length) { readout.innerHTML = `<span class="dim">click the spectrogram first</span>`; return; }
-      scoring = true; truthShown = true; redraw(); reveal();
+      scoring = true; truthShown = true; reveal();
+      el.querySelector("details").open = true;   // reveal() writes into a closed panel otherwise
+      redraw();
       const TOL = 0.030;
       const used = new Set();
       let hit = 0;
@@ -245,6 +252,17 @@ function playerCard(el, entry) {
   return { redraw, entry };
 }
 
+/* ─────────────────── lesson 3: naming table from the audio ─────────────────── */
+function shapeTable(manifest) {
+  const body = document.getElementById("shapeTable");
+  if (!body) return;
+  const rows = ["tag113", "tag5r1", "tag4r2"].map(id => manifest.find(e => e.id === id)).filter(Boolean);
+  if (!rows.length) { body.innerHTML = ""; return; }
+  body.innerHTML = rows.map(e =>
+    `<tr><td style="padding:6px 0"><code>${e.codaType}</code></td><td>${e.nClicks}</td>` +
+    `<td>${e.icis.map(v => Math.round(v * 1000)).join(", ")}</td></tr>`).join("");
+}
+
 /* ───────────────────────── lesson 4: the leak ───────────────────────── */
 function leakDemo(manifest) {
   const box = $("#leakBtns"), out = $("#leakOut");
@@ -254,9 +272,11 @@ function leakDemo(manifest) {
     b.textContent = `clip ${e.clip} · ${e.rig.includes("tag") ? "tag" : "towed"} · ${e.fileDur.toFixed(2)} s`;
     b.onclick = () => {
       out.innerHTML =
-        `<code>file is ${e.fileDur.toFixed(3)} s</code> → subtract the 1.000 s of padding → ` +
+        `<code>file is ${e.fileDur.toFixed(3)} s</code> → minus the 1.000 s of padding → ` +
         `the coda lasted <b>${(e.fileDur - 1).toFixed(3)} s</b>.<br>` +
-        `The published table has one row in this session with that duration:<br><br>` +
+        `Duration alone is ambiguous — dozens of codas share a length — but the clips are stored in ` +
+        `recording order, so a <em>run</em> of consecutive matches pins each one down. That resolves ` +
+        `to:<br><br>` +
         `<b>${e.codaType}</b> · ${e.nClicks} clicks · clan ${e.clan} · unit ${e.unit} · ${e.date}.<br>` +
         `<span class="dim">No audio analysis. That's the leak.</span>`;
     };
@@ -316,8 +336,8 @@ const CARDS = [
   ["Clan", "A group of whales sharing a coda repertoire. Learned, not genetic — this is culture."],
   ["Unit", "A smaller social group within a clan; the whales that actually swim together."],
   ["Why we mark clicks, not coda names", "At least three incompatible naming schemes exist. Times are objective; names are conventions."],
-  ["1+1+3", "A coda described as click, click, then three. Dominica's most common shape."],
-  ["5R1", "Five evenly spaced clicks, then a long gap. 'R' means regular run."],
+  ["1+1+3", "Groups of 1, 1 and 3 clicks — five in total, with the longest gaps between the groups. Dominica's most common shape at 42% of codas."],
+  ["5R1", "Five regular clicks in quick succession, gaps around 60–100 ms. 5R1, 5R2 and 5R3 all have five clicks and differ only in spacing — the label is compressed description, not a name from a rulebook."],
   ["DSWP", "Dominica Sperm Whale Project — the long-running fieldwork that produced the public audio and the coda table."],
   ["DTag", "A suction-cupped tag that records from the whale itself. Near-field audio: few echoes."],
   ["Towed hydrophone", "A microphone dragged behind a boat. Far-field: shallow water sends every click back as echoes."],
@@ -330,7 +350,7 @@ const CARDS = [
   ["Stability", "Jitter the clicks by the observed disagreement and ask whether the derived label survives. A label that survives 99% is safe; 46% is not."],
   ["Why fast codas are harder", "A fixed timing error is a bigger fraction of a 90 ms gap than a 300 ms gap, so the rhythm flips more easily."],
   ["Why we don't use coda names in code", "Names bake in a controversy. The pipeline emits times; a declared step derives names."],
-  ["What '3-40 clicks' means", "Codas range widely across populations; the published Dominica table records 1 to 10 per coda."],
+  ["Why 3–40 clicks and 1–10 both appear", "Codas range widely across populations (up to 40 clicks); the published Dominica table records 1 to 10. Always say which population a range describes."],
   ["Does any of this prove meaning?", "No. Structure is evidenced; meaning is not. Nobody has shown a coda stands for anything."]
 ];
 
@@ -352,7 +372,11 @@ const CARDS = [
     if (e.target.tagName === "INPUT") return;
     if (e.key === "ArrowRight") { i = (i + 1) % CARDS.length; back = false; show(); }
     if (e.key === "ArrowLeft") { i = (i - 1 + CARDS.length) % CARDS.length; back = false; show(); }
-    if (e.key === " ") { e.preventDefault(); back = !back; show(); }
+    if (e.key === " ") {
+      const r = box.getBoundingClientRect();
+      const visible = r.top < window.innerHeight * 0.8 && r.bottom > window.innerHeight * 0.2;
+      if (visible) { e.preventDefault(); back = !back; show(); }
+    }
   });
   show();
 })();
@@ -387,7 +411,7 @@ const QUIZ = [
     q: "A detector reports a confident coda in a clip of pure background noise. What does that tell you?",
     a: ["The noise is actually a coda", "The clip is too short", "There's no minimum signal-to-noise floor, so chance peaks can assemble into a 'coda'", "The sample rate is wrong"],
     correct: 2,
-    why: "At 48 kHz over a few seconds, chance peaks clear a simple threshold often enough to fake three clicks. An SNR floor is what stops it."
+    why: "Chance peaks clear a simple threshold often enough to assemble three 'clicks' out of noise. A minimum signal-to-noise floor stops it — that floor is in the pipeline, and it costs a little accuracy."
   },
   {
     q: "Which claim would you reject outright?",
@@ -452,6 +476,7 @@ const QUIZ = [
     if (entry) playerCard(el, entry);
     else el.textContent = "audio unavailable";
   });
+  shapeTable(manifest);
   leakDemo(manifest);
   stabilityDemo(manifest);
 })();

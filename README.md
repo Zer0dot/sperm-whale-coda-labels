@@ -87,6 +87,8 @@ the marks.
 
 ## Licence
 
-Code MIT. The audio belongs to the Dominica Sperm Whale Project and is used
-under CC-BY-4.0; it is not redistributed here. Marks produced with this tool are
+Code MIT. The audio belongs to the Dominica Sperm Whale Project, CC-BY-4.0.
+The full 1,501-clip corpus is not redistributed here — `src/fetch_data.py`
+downloads it from source. The seven short clips in `site/audio/` are
+redistributed under CC-BY-4.0 with attribution, as that licence allows. Marks produced with this tool are
 yours to license as you choose.

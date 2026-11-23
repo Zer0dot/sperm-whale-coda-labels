@@ -1,4 +1,7 @@
 out/*.jsonl
+# The full corpus is not redistributed, but the seven teaching clips are
+# (CC-BY-4.0, attributed in site/README.md).
 *.wav
+!site/audio/*.wav
 .venv/
 __pycache__/

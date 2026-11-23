@@ -67,9 +67,18 @@
 
   <div class="player" data-clip="slow" data-mode="mark"></div>
 
+  <div class="card tight">
+    <b>Two rules the scorer applies.</b>
+    <p class="small" style="margin:8px 0 0">
+      Clicks separated by more than <b>0.55 s</b> belong to different codas. And a run of more than
+      <b>10 clicks</b> is rejected outright — the published Dominica repertoire runs 1 to 10 per
+      coda, so a longer run is two codas merged, or an echolocation train.</p>
+  </div>
+
   <p class="dim small">Clicks look like vertical stripes. Ignore the faint horizontal haze — that's
-    background noise. If you put two marks 2–5 ms apart, that's one click: sperm whale clicks have a
-    multi-pulse structure and the tool merges them.</p>
+    background noise. If you place two marks within about 12 ms of each other the tool treats that as a
+    misclick and removes one. Sperm whale clicks do have a multi-pulse structure, but the detector
+    handles that — you just mark the click.</p>
 </section>
 
 <!-- ───────────────────────────── 3 ───────────────────────────── -->
@@ -93,13 +102,19 @@
   <div class="player" data-clip="towed-clean" data-mode="plain"></div>
 
   <div class="card">
+    <p style="margin:0 0 10px"><b>What the notation actually encodes.</b> In the Dominica scheme a
+      label packs several things into one string: a click count, <code>R</code> for a run of regular
+      clicks, <code>+</code> for grouped clicks, letters like <code>D</code> for a descending
+      pattern, <code>i</code> for something else again.</p>
     <table style="width:100%;border-collapse:collapse;font-size:14.5px">
-      <tr style="color:var(--dim);text-align:left"><th style="padding:6px 0">Scheme</th><th>What this coda is called</th></tr>
-      <tr><td style="padding:6px 0">Dominica (the one we use)</td><td><code>5R1</code></td></tr>
-      <tr><td style="padding:6px 0">Grouped/intervals</td><td><code>4+1</code></td></tr>
-      <tr><td style="padding:6px 0">Descriptive</td><td><code>four regular, one long gap</code></td></tr>
+      <thead><tr style="color:var(--dim);text-align:left"><th style="padding:6px 0">Label</th><th>Clicks</th><th>Measured gaps (ms)</th></tr></thead>
+      <tbody id="shapeTable"><tr><td colspan="3" class="dim small">loading…</td></tr></tbody>
     </table>
-    <p class="small dim" style="margin:12px 0 0">Same audio. Three labels. None is wrong.</p>
+    <p class="small dim" style="margin:12px 0 0">Read the table, not the names. A label packs a
+      click count and a spacing pattern into one string, and the encoding is not obvious: three
+      labels here describe codas whose real difference is <em>how far apart the clicks are</em>. The
+      name is a compressed description, not something you can read off a rulebook — which is why
+      different labs compress differently, and why we store times instead.</p>
   </div>
 
   <p><b>So our pipeline never names a coda.</b> It records click times. Names get derived later,
@@ -112,9 +127,11 @@
   <h2><span class="num">4</span>The data, and the trick</h2>
   <p>Public coda data is two halves that don't fit together: <b>1,501 audio clips</b> (45 minutes)
     with no labels, and <b>8,719 measurements</b> in a spreadsheet with no audio.</p>
-  <p>I assumed we'd have to label the audio ourselves. We didn't. Each clip turned out to be one
-    published coda with exactly <b>half a second of padding</b> at each end — so the label is
-    hiding in the file length.</p>
+  <p>I assumed we'd have to label the audio ourselves. We didn't. Each public clip turned out to be
+    one published coda with exactly <b>1.000 s of padding</b> (half a second at each end) — so the
+    label is hiding in the file length.</p>
+  <p class="dim small">Published labels here are treated as the answer. They are <b>assumed</b>
+    correct — this project has not independently re-verified them.</p>
 
   <div class="card" id="leak">
     <b>Try the leak.</b> <span class="dim small">Pick a clip; I'll tell you what its file length reveals.</span>
@@ -183,6 +200,9 @@
       rhythm within 15%.</p>
   </div>
 
+  <p class="dim small"><b>The slider is a simulation</b>, not a measurement — it re-reads the
+    rhythm under synthetic jitter. No human annotators have marked this corpus yet, so no real
+    agreement figure exists.</p>
   <p>This is <b>inter-annotator agreement</b> — IAA. Without it, “we labelled 500 codas” has no
     floor under it. With it, you can say “two people found the same clicks to within 7 ms” and a
     reader can decide whether to believe you.</p>
@@ -245,9 +265,10 @@
 </section>
 
 <footer>
-  <p><b>Audio</b> — Dominica Sperm Whale Project, used under CC-BY-4.0, trimmed and resampled for
-    teaching. Labels from the published Dominica coda table. Nothing here is redistributed beyond
-    fair teaching use.</p>
+  <p><b>Audio</b> — Dominica Sperm Whale Project, <b>CC-BY-4.0</b>. These seven clips are trimmed,
+    resampled and redistributed here under that licence, with attribution. The full 1,501-clip
+    corpus is <em>not</em> redistributed; <code>src/fetch_data.py</code> downloads it from source.
+    Labels come from the published Dominica coda table.</p>
   <p><b>Code and findings</b> — <code>Zer0dot/sperm-whale-coda-labels</code>. Numbers quoted on this
     page are reproduced by <code>src/calibrate.py</code>.</p>
 </footer>

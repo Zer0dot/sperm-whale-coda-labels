@@ -11,24 +11,37 @@ No build step, no dependencies, no network beyond its own folder.
 
 ## What's in it
 
-- `index.html` — the lessons, flashcards and quiz markup
+- `index.html` — lessons, flashcards and quiz markup
 - `app.js` — spectrogram renderer, audio player, marking exercise, stability demo
 - `style.css`
-- `audio/` — seven clips cut from the public dataset, plus `manifest.json`
+- `audio/` — seven clips plus `manifest.json`
+- `make_clips.py` — regenerates `audio/` from the public corpus
 
-`manifest.json` carries the published answer for each clip: coda type, click
-count, inter-click intervals, onset times, clan, unit and date. The onset times
-are `0.30 + cumulative intervals`, because each clip is trimmed to start 0.30 s
-before the first click.
+## How the clips are cut
 
-The audio is Dominica Sperm Whale Project material, CC-BY-4.0, trimmed to
-44.1 kHz mono for teaching. If you reuse these clips, keep the attribution.
+The original public files are one published coda with **1.000 s of padding**
+(0.5 s at each end). These teaching clips are re-trimmed tighter: 0.30 s before
+the first click and 0.30 s after the last. That is why the manifest's onset
+times are `0.30 + cumulative published intervals`, and why a clip's `fileDur`
+(the original length, which is what leaks the label) is not the same as its
+length on disk.
 
-## Regenerating the clips
+Regenerating:
 
-The script that produced `audio/` is not checked in — it depended on the local
-layout of the downloaded corpus. The selection rule was: for each teaching
-purpose, pick a clip where the published answer is known and the machine
-behaviour illustrates the point (for the failure case, a towed clip where the
-detector over-counts by 5; for the speed comparison, a `5R1` around 80 ms and a
-`1+1+3` averaging about 350 ms).
+```bash
+python site/make_clips.py --corpus data/dswp --join out/join.csv \
+    --table data/DominicaCodas.csv --features out/clip_features.jsonl \
+    --out site/audio
+```
+
+It picks one clip per teaching purpose: three whale-borne exemplars the detector
+gets right, one towed clip it gets badly wrong (the lesson depends on that being
+a real failure), one towed clip it gets right, and a fast/slow pair chosen on
+measured inter-click interval rather than on type name.
+
+## Audio licence
+
+The clips are Dominica Sperm Whale Project recordings, **CC-BY-4.0**, trimmed
+and resampled to 44.1 kHz mono. They are redistributed here under that licence
+with attribution. The full 1,501-clip corpus is not redistributed;
+`src/fetch_data.py` downloads it from source.
