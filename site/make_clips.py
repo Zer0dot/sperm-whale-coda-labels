@@ -8,10 +8,11 @@ writes the manifest the site reads.
     python site/make_clips.py --corpus data/dswp --join out/join.csv \
         --table data/DominicaCodas.csv --out site/audio
 
-Every clip is trimmed to 0.30 s before the first click and 0.30 s after the
-last, so the onsets in the manifest are `0.30 + cumulative published intervals`.
-The ORIGINAL public files carry 1.000 s of padding total (0.5 s each end);
-these teaching clips are re-trimmed to sit tighter.
+The public files carry 0.5 s of padding before the first click.  This script
+drops 0.30 s from the start of the file, so a teaching clip begins 0.20 s
+before the first click and the manifest onsets are `0.20 + cumulative
+published intervals`.  Check `LEAD` below before trusting that sentence: it is
+computed, not hard-coded, precisely so this comment cannot drift from the code.
 """
 from __future__ import annotations
 
