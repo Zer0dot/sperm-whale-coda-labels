@@ -36,6 +36,7 @@ it is not a nicety; it is the method.
 | `tools/marker.html` | Browser tool: open a wav, see the spectrogram, correct the marks |
 | `docs/PROTOCOL.md` | The rulebook annotators follow, including edge cases |
 | `docs/FINDINGS.md` | What the audio actually shows, including the label leak |
+| `tests/` | Synthetic regression tests for the extractor, the join, and agreement |
 
 ## Quick start
 
@@ -66,8 +67,8 @@ the marks.
 
 - 1,501 clips, 45 minutes of audio, of which 1,382 are matched to published
   labels.
-- Detector against those labels: 19.6% exact click count overall — but 58.8% on
-  the 199 whale-borne clips and 13.0% on the 1,183 towed ones. Near-field audio
+- Detector against those labels: 18.9% exact click count overall — but 58.8% on
+  the 199 whale-borne clips and 12.2% on the 1,183 towed ones. Near-field audio
   is a different problem from far-field audio, and averaging them hides that.
 - Agreement machinery built and self-tested (17 checks), but no human
   annotator has marked anything yet — so there is no real IAA figure, and none

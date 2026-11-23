@@ -58,17 +58,17 @@ inferred from a histogram. On the default profile, over all 1,382:
 
 | | result |
 |---|---|
-| exact click count | **19.6%** |
-| within ±1 click | 36.9% |
-| bias | +0.53 clicks |
-| mean absolute error | 2.48 clicks |
+| exact click count | **18.9%** |
+| within ±1 click | 34.9% |
+| bias | +0.24 clicks |
+| mean absolute error | 2.65 clicks |
 
 That single figure is close to useless on its own, because the corpus is two
 different recording setups in a trench coat:
 
 | clips | n | exact click count | within ±1 | mean abs error |
 |---|---|---|---|---|
-| towed hydrophone (≤96 kHz) | 1,183 | **13.0%** | 30.4% | 2.72 |
+| towed hydrophone (≤96 kHz) | 1,183 | **12.2%** | 28.1% | 2.91 |
 | whale-borne DTag (120 kHz) | 199 | **58.8%** | 75.4% | 1.08 |
 
 The same code, the same settings, five times the accuracy on whale-borne
@@ -102,8 +102,8 @@ Jitter the click times by 10 ms — roughly what two careful annotators differ b
 
 | codas | count | intervals survive | pass a 0.9 stability bar |
 |---|---|---|---|
-| fast (intervals under 120 ms) | 467 | 46% | 4% |
-| slow (intervals 120 ms or more) | 845 | 99% | 99% |
+| fast (intervals under 120 ms) | 436 | 46% | 4% |
+| slow (intervals 120 ms or more) | 797 | 99% | 99% |
 
 A third of the corpus is in the fast regime, and those are the `5R1` and `4R2`
 shapes that make up much of the Dominica repertoire. So "did we agree on this

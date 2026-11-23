@@ -46,6 +46,7 @@ PROFILES: dict[str, dict] = {
         min_clicks=3,
         max_clicks=10,      # Dominica scheme documents 1-10 clicks per coda
         min_ici=0.025,      # closer than this is one click, not two
+        min_snr=3.0,        # below this the "coda" is indistinguishable from noise
     ),
     "tag": dict(
         band=(1000.0, 20000.0),
@@ -57,6 +58,7 @@ PROFILES: dict[str, dict] = {
         max_clicks=10,
         min_clicks=3,
         min_ici=0.025,
+        min_snr=3.0,
     ),
 }
 
@@ -241,6 +243,9 @@ def codas_from_candidates(times: np.ndarray, heights: np.ndarray, med: float,
             for coda_t, coda_h in _split_oversized(seg_t, seg_h, p["max_clicks"]):
                 if coda_t.size < p["min_clicks"]:
                     continue
+                snr = float(coda_h.max() / (med + 1e-12))
+                if snr < p.get("min_snr", 0.0):
+                    continue
                 t = [round(float(v), 5) for v in coda_t]
                 icis = [round(t[i + 1] - t[i], 5) for i in range(len(t) - 1)]
                 codas.append(
@@ -249,7 +254,7 @@ def codas_from_candidates(times: np.ndarray, heights: np.ndarray, med: float,
                         clicks=t,
                         icis=icis,
                         duration=round(t[-1] - t[0], 5),
-                        peak_snr=round(float(coda_h.max() / (med + 1e-12)), 2),
+                        peak_snr=round(snr, 2),
                         profile=profile,
                         train_like=is_train(icis),
                     )
