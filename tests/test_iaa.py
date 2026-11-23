@@ -74,6 +74,51 @@ def main():
     check("fast coda less stable than slow", fast["survives_ici"] < slow["survives_ici"],
           f"{fast['survives_ici']} < {slow['survives_ici']}")
 
+    # --- regressions for defects found in review -------------------------
+    import json, tempfile, os
+
+    # A whole extra coda on one side must cost agreement.  Scoring only the
+    # pairs that matched reported F1 = 1.0 here.
+    a = {"clip": "1", "codas": [{"clicks": [0.10, 0.35, 0.52]},
+                                {"clicks": [1.10, 1.35, 1.52]}]}
+    b = {"clip": "1", "codas": [{"clicks": [0.10, 0.35, 0.52]}]}
+    d = iaa.compare_clip(a, b)
+    check("whole extra coda costs precision", d["f1"] < 0.8, str(d["f1"]))
+    check("extra coda counted as unmatched", d["unmatched_codas"] == 1, str(d["unmatched_codas"]))
+
+    # Empty click lists must not raise.
+    try:
+        d = iaa.compare_clip({"clip": "1", "codas": [{"clicks": []}]},
+                             {"clip": "1", "codas": [{"clicks": [0.1, 0.2, 0.3]}]})
+        ok = d.get("status") == "one_side_empty"
+    except Exception as exc:  # noqa: BLE001
+        ok = False
+        d = {"error": str(exc)}
+    check("empty click list handled", ok, str(d.get("status", d)))
+
+    # The extractor's JSONL output must be readable.
+    rows = [{"clip": "1", "dur": 1.0, "n_codas": 1, "codas": [{"clicks": [0.1, 0.35, 0.52]}]}]
+    with tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False) as fh:
+        for r in rows:
+            fh.write(json.dumps(r) + "\n")
+        path = fh.name
+    try:
+        loaded = iaa._load(Path(path))
+        check("reads extractor JSONL", "1" in loaded)
+    except Exception as exc:  # noqa: BLE001
+        check("reads extractor JSONL", False, str(exc))
+    finally:
+        os.unlink(path)
+
+    # A run where nothing overlapped must say so, not report 0 agreement.
+    summ = iaa.summarise([{"status": "one_side_empty", "f1": 0.0, "unmatched_codas": 1}])
+    check("no-comparison run is labelled", summ.get("comparable") == 0 and "note" in summ, str(summ))
+
+    # One annotator silently missing everything must not look like agreement.
+    silent = iaa.compare_clip({"clip": "1", "codas": [{"clicks": [0.1, 0.2, 0.3]}]},
+                              {"clip": "1", "codas": []})
+    check("silent annotator scores zero", silent["f1"] == 0.0, str(silent["f1"]))
+
     print()
     if FAILS:
         print(f"{len(FAILS)} check(s) failed")

@@ -204,7 +204,8 @@
 
   function updateReadout() {
     const g = groups().filter(c => c.length >= 3);
-    const ic = icis();
+    // mean of within-coda intervals only; a gap between two codas is not an ICI
+    const ic = g.flatMap(c => c.slice(1).map((t, i) => t - c[i]));
     const flag = state[curKey] || {};
     let html = `<b>${marks.length}</b> onsets`;
     if (g.length) html += ` · <b>${g.length}</b> coda${g.length > 1 ? 's' : ''} (≥3 clicks)`;
@@ -218,7 +219,7 @@
   }
 
   function saveState() {
-    if (curKey) state[curKey] = { marks: marks.slice(), ...(state[curKey] || {}) };
+    if (curKey) state[curKey] = { ...(state[curKey] || {}), marks: marks.slice() };
   }
 
   function loadClip(i) {
@@ -321,8 +322,11 @@
     saveState();
     const out = { annotator: 'unknown', protocol: 'docs/PROTOCOL.md v0', marked_at: new Date().toISOString(),
       clips: Object.entries(state).map(([clip, v]) => ({
-        clip, marks: v.marks, overlap: !!v.overlap, degraded: !!v.degraded,
-        codas: groupsOf(v.marks).filter(c => c.length >= 3).map(c => ({ clicks: c }))
+        // key on the stem: src/extract_clicks.py writes "1234", not "1234.wav"
+        clip: clip.replace(/\.wav$/i, ''),
+        marks: v.marks, overlap: !!v.overlap, degraded: !!v.degraded,
+        // every group is exported; what counts as a coda is a downstream decision
+        codas: groupsOf(v.marks).map(c => ({ clicks: c }))
       })) };
     const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
