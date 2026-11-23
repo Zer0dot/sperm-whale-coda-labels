@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Coda click marker</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin:0; background:#12141a; color:#e8eaf0;
+         font:14px/1.5 system-ui, -apple-system, Segoe UI, sans-serif; }
+  header { padding:12px 18px; background:#1a1d26; border-bottom:1px solid #2a2f3d;
+           display:flex; gap:14px; align-items:center; flex-wrap:wrap; }
+  h1 { font-size:15px; margin:0; font-weight:600; letter-spacing:.01em; }
+  .hint { color:#8b93a7; font-size:12.5px; }
+  main { padding:18px; max-width:1180px; margin:0 auto; }
+  #wrap { position:relative; background:#0b0d12; border:1px solid #2a2f3d;
+          border-radius:6px; overflow:hidden; }
+  canvas { display:block; width:100%; height:340px; cursor:crosshair; }
+  .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:12px; }
+  button { background:#232838; color:#e8eaf0; border:1px solid #3a4256; border-radius:5px;
+           padding:7px 13px; font:inherit; cursor:pointer; }
+  button:hover { background:#2c3346; }
+  button.primary { background:#2f6df6; border-color:#2f6df6; }
+  button.primary:hover { background:#4880f8; }
+  button.on { background:#2f6df6; border-color:#2f6df6; }
+  button:disabled { opacity:.4; cursor:default; }
+  #stats { margin-top:14px; font-variant-numeric:tabular-nums; color:#b9c0d2; }
+  #stats b { color:#e8eaf0; }
+  #list { font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:12.5px;
+          color:#9aa3b8; margin-top:8px; max-height:88px; overflow:auto; }
+  #meta { color:#8b93a7; font-size:12.5px; }
+  #drop { border:2px dashed #3a4256; border-radius:8px; padding:44px; text-align:center;
+          color:#8b93a7; }
+  #drop.hot { border-color:#2f6df6; color:#e8eaf0; }
+  .sep { width:1px; height:22px; background:#2a2f3d; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Coda click marker</h1>
+  <span class="hint">Click the spectrogram to place a click onset. Mark onsets only — never coda type names.</span>
+</header>
+
+<main>
+  <div id="wrap"><canvas id="cv" width="1160" height="340"></canvas></div>
+
+  <div class="row">
+    <button id="prev">← previous</button>
+    <button id="next">next →</button>
+    <span class="sep"></span>
+    <button id="undo">undo mark</button>
+    <button id="clear">clear marks</button>
+    <button id="propose">machine proposal</button>
+    <span class="sep"></span>
+    <button id="flagOverlap">overlap</button>
+    <button id="flagDegraded">degraded</button>
+    <span class="sep"></span>
+    <button id="download">download my marks</button>
+    <button id="file" class="primary">open audio…</button>
+    <input id="picker" type="file" accept="audio/*" multiple hidden>
+  </div>
+
+  <div id="stats"></div>
+  <div id="list"></div>
+  <div id="meta" style="margin-top:12px"></div>
+  <div id="drop" style="margin-top:14px">Drop .wav files here, or use “open audio…”</div>
+</main>
+
+<script>
+(() => {
+  "use strict";
+  const TOL_MS = 5;                 // marking resolution
+  const MAX_ICI = 0.55;             // seconds; coda split threshold (see docs/PROTOCOL.md)
+  const cv = document.getElementById('cv');
+  const ctx = cv.getContext('2d');
+
+  let files = [];          // File objects
+  let idx = 0;
+  let audio = null;        // AudioBuffer
+  let sr = 48000;
+  let sgram = null;        // {mag: Float32Array[], t0, dt, df, maxDb}
+  let marks = [];          // array of onset times (seconds), sorted
+  const state = {};        // clipKey -> {marks, overlap, degraded}
+  let curKey = null;
+  let marksKey = null;   // which clip the `marks` array actually belongs to
+
+  // ---------- FFT ----------
+  function fft(re, im) {
+    const n = re.length;
+    for (let i = 1, j = 0; i < n; i++) {
+      let bit = n >> 1;
+      for (; j & bit; bit >>= 1) j ^= bit;
+      j ^= bit;
+      if (i < j) { [re[i], re[j]] = [re[j], re[i]]; [im[i], im[j]] = [im[j], im[i]]; }
+    }
+    for (let len = 2; len <= n; len <<= 1) {
+      const ang = -2 * Math.PI / len;
+      const wr = Math.cos(ang), wi = Math.sin(ang);
+      for (let i = 0; i < n; i += len) {
+        let cr = 1, ci = 0;
+        for (let k = 0; k < len / 2; k++) {
+          const ur = re[i + k], ui = im[i + k];
+          const vr = re[i + k + len / 2] * cr - im[i + k + len / 2] * ci;
+          const vi = re[i + k + len / 2] * ci + im[i + k + len / 2] * cr;
+          re[i + k] = ur + vr; im[i + k] = ui + vi;
+          re[i + k + len / 2] = ur - vr; im[i + k + len / 2] = ui - vi;
+          const ncr = cr * wr - ci * wi;
+          ci = cr * wi + ci * wr; cr = ncr;
+        }
+      }
+    }
+  }
+
+  function computeSpectrogram(buf) {
+    const x = buf.getChannelData(0);
+    const N = 512, hop = 128;
+    const frames = Math.max(1, Math.floor((x.length - N) / hop) + 1);
+    const bins = N / 2;
+    const hann = new Float32Array(N);
+    for (let i = 0; i < N; i++) hann[i] = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / (N - 1));
+
+    const mags = [];
+    const re = new Float64Array(N), im = new Float64Array(N);
+    for (let f = 0; f < frames; f++) {
+      const off = f * hop;
+      for (let i = 0; i < N; i++) { re[i] = x[off + i] * hann[i]; im[i] = 0; }
+      fft(re, im);
+      const m = new Float32Array(bins);
+      for (let b = 0; b < bins; b++) m[b] = Math.hypot(re[b], im[b]);
+      mags.push(m);
+    }
+    // display range: 0 - 12 kHz
+    const maxBin = Math.min(bins, Math.round(12000 / (buf.sampleRate / N)));
+    let peak = 0;
+    for (const m of mags) for (let b = 0; b < maxBin; b++) if (m[b] > peak) peak = m[b];
+    return { mags, frames, maxBin, sr: buf.sampleRate, N, hop, peak: peak || 1,
+             dur: buf.duration };
+  }
+
+  function db(v, peak) { return 20 * Math.log10(Math.max(v, 1e-12) / peak); }
+
+  function draw() {
+    const W = cv.width, H = cv.height;
+    ctx.fillStyle = '#0b0d12'; ctx.fillRect(0, 0, W, H);
+    if (!sgram) return;
+    const { mags, frames, maxBin, peak } = sgram;
+    const LO = -78, HI = 0;   // dB range of the colour map
+    const img = ctx.createImageData(frames, maxBin);
+    const d = img.data;
+    for (let f = 0; f < frames; f++) {
+      const col = mags[f];
+      for (let b = 0; b < maxBin; b++) {
+        const t = Math.min(1, Math.max(0, (db(col[b], peak) - LO) / (HI - LO)));
+        const p = ((maxBin - 1 - b) * frames + f) * 4;
+        // simple dark-blue -> cyan -> yellow ramp
+        d[p]     = Math.round(255 * Math.pow(t, 1.7));
+        d[p + 1] = Math.round(255 * Math.pow(t, 1.1) * 0.92);
+        d[p + 2] = Math.round(255 * (t < 0.55 ? t * 1.5 : 0.8 + 0.2 * t));
+        d[p + 3] = 255;
+      }
+    }
+    const off = document.createElement('canvas');
+    off.width = frames; off.height = maxBin;
+    off.getContext('2d').putImageData(img, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(off, 0, 0, W, H);
+
+    // time grid
+    ctx.strokeStyle = 'rgba(255,255,255,.14)'; ctx.fillStyle = '#8b93a7';
+    ctx.font = '11px ui-monospace, monospace'; ctx.lineWidth = 1;
+    const dur = sgram.dur;
+    const step = dur > 3 ? 1 : 0.5;
+    for (let t = 0; t <= dur + 1e-9; t += step) {
+      const x = (t / dur) * W;
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+      ctx.fillText(t.toFixed(1) + 's', x + 3, H - 5);
+    }
+
+    // marks
+    for (const t of marks) {
+      const x = (t / dur) * W;
+      ctx.strokeStyle = '#ffd166'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+      ctx.fillStyle = '#ffd166';
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x - 5, 10); ctx.lineTo(x + 5, 10); ctx.closePath(); ctx.fill();
+    }
+    updateReadout();
+  }
+
+  function icis() {
+    const out = [];
+    for (let i = 1; i < marks.length; i++) out.push(marks[i] - marks[i - 1]);
+    return out;
+  }
+
+  function groups() {
+    // split marks into codas at gaps > MAX_ICI (same rule as the extractor)
+    const g = []; let cur = [];
+    for (let i = 0; i < marks.length; i++) {
+      if (i > 0 && marks[i] - marks[i - 1] > MAX_ICI) { if (cur.length) g.push(cur); cur = []; }
+      cur.push(marks[i]);
+    }
+    if (cur.length) g.push(cur);
+    return g;
+  }
+
+  function updateReadout() {
+    const g = groups().filter(c => c.length >= 3);
+    // mean of within-coda intervals only; a gap between two codas is not an ICI
+    const ic = g.flatMap(c => c.slice(1).map((t, i) => t - c[i]));
+    const flag = state[curKey] || {};
+    let html = `<b>${marks.length}</b> onsets`;
+    if (g.length) html += ` · <b>${g.length}</b> coda${g.length > 1 ? 's' : ''} (≥3 clicks)`;
+    if (ic.length) html += ` · ICI ${Math.round(1000 * (ic.reduce((a, b) => a + b, 0) / ic.length))} ms mean`;
+    if (flag.overlap) html += ' · <span style="color:#ff9f68">overlap</span>';
+    if (flag.degraded) html += ' · <span style="color:#ff9f68">degraded</span>';
+    document.getElementById('stats').innerHTML = html;
+    document.getElementById('list').textContent = ic.length
+      ? ic.map(v => Math.round(v * 1000)).join('  ') + '  ms'
+      : 'no clicks marked yet';
+  }
+
+  function markTouched() {
+    if (!curKey || marksKey !== curKey) return;
+    state[curKey] = { ...(state[curKey] || {}), marks: marks.slice(), touched: true };
+  }
+
+  // Guarded: `marks` may still hold the previous clip's clicks while the next
+  // one is decoding.  Writing them under the new key silently corrupts it.
+  function saveState() {
+    if (curKey && marksKey === curKey) {
+      state[curKey] = { ...(state[curKey] || {}), marks: marks.slice() };
+    }
+  }
+
+  function loadClip(i) {
+    if (!files.length) return;
+    saveState();
+    idx = Math.max(0, Math.min(files.length - 1, i));
+    const f = files[idx];
+    curKey = f.name;
+    document.getElementById('meta').textContent =
+      `${f.name} — clip ${idx + 1} of ${files.length}`;
+    const myKey = f.name;
+    const fr = new FileReader();
+    fr.onload = async () => {
+      // A slow decode can finish after the user has moved on; without this
+      // check its marks attach to whatever clip is current, silently.
+      if (curKey !== myKey) return;
+      const ac = new (window.AudioContext || window.webkitAudioContext)();
+      try {
+        audio = await ac.decodeAudioData(fr.result);
+      } catch (e) {
+        document.getElementById('meta').textContent = `${f.name} — could not decode`;
+        return;
+      }
+      if (curKey !== myKey) return;
+      sgram = computeSpectrogram(audio);
+      const prev = state[curKey];
+      marks = prev ? prev.marks.slice() : [];
+      marksKey = curKey;
+      // Machine proposals must never be mistaken for confirmed human marks.
+      if (!prev) { propose(); state[curKey] = { marks: marks.slice(), touched: false }; }
+      draw();
+      // decode context is single-use-ish; close it
+      ac.close();
+    };
+    fr.readAsArrayBuffer(f);
+  }
+
+  function propose() {
+    // crude energy-envelope peak picker: a starting point to correct, not an answer
+    if (!audio) return;
+    const x = audio.getChannelData(0);
+    const sr = audio.sampleRate;
+    const win = Math.max(1, Math.round(sr / 800));
+    const env = new Float32Array(x.length);
+    let acc = 0;
+    for (let i = 0; i < x.length; i++) {
+      acc += Math.abs(x[i]) / win;
+      if (i >= win) acc -= Math.abs(x[i - win]) / win;
+      env[i] = acc;
+    }
+    const med = median(env);
+    const mad = median(env.map(v => Math.abs(v - med))) || 1e-9;
+    const thr = med + 3 * 1.4826 * mad;
+    const minGap = Math.round(0.02 * sr);
+    const peaks = [];
+    for (let i = 1; i < env.length - 1; i++) {
+      if (env[i] > thr && env[i] >= env[i - 1] && env[i] > env[i + 1]) {
+        if (peaks.length && i - peaks[peaks.length - 1] < minGap) {
+          if (env[i] > env[peaks[peaks.length - 1]]) peaks[peaks.length - 1] = i;
+        } else peaks.push(i);
+      }
+    }
+    const heights = peaks.map(i => env[i]);
+    const top = Math.max(...heights, 1);
+    const floor = top * Math.pow(10, -12 / 20);
+    marks = peaks.filter((i, k) => heights[k] >= floor)
+                 .map(i => Math.round((i / sr) / (TOL_MS / 1000)) * (TOL_MS / 1000));
+    marks = [...new Set(marks)].sort((a, b) => a - b);
+  }
+
+  function median(a) {
+    const b = Float64Array.from(a).sort();
+    return b.length ? b[Math.floor(b.length / 2)] : 0;
+  }
+
+  cv.addEventListener('click', ev => {
+    if (!sgram) return;
+    const r = cv.getBoundingClientRect();
+    const frac = (ev.clientX - r.left) / r.width;
+    const t = Math.max(0, Math.min(sgram.dur, frac * sgram.dur));
+    const snapped = Math.round(t / (TOL_MS / 1000)) * (TOL_MS / 1000);
+    // clicking near an existing mark removes it
+    const near = marks.findIndex(m => Math.abs(m - snapped) < 0.012);
+    if (near >= 0) marks.splice(near, 1);
+    else marks.push(snapped);
+    marks.sort((a, b) => a - b);
+    markTouched(); draw();
+  });
+
+  document.getElementById('undo').onclick = () => { marks.pop(); markTouched(); draw(); };
+  document.getElementById('clear').onclick = () => { marks = []; markTouched(); draw(); };
+  document.getElementById('propose').onclick = () => {
+    if (!curKey || marksKey !== curKey) return;
+    propose();
+    // A fresh machine proposal is unconfirmed by definition, even if the user
+    // had edited the previous marks for this clip.
+    state[curKey] = { ...(state[curKey] || {}), marks: marks.slice(), touched: false };
+    draw();
+  };
+  document.getElementById('prev').onclick = () => loadClip(idx - 1);
+  document.getElementById('next').onclick = () => loadClip(idx + 1);
+
+  for (const [id, key] of [['flagOverlap', 'overlap'], ['flagDegraded', 'degraded']]) {
+    document.getElementById(id).onclick = e => {
+      // Same guard as saveState: mid-decode, `marks` still belongs to the
+      // previous clip and must not be recorded against this one.
+      if (!curKey || marksKey !== curKey) return;
+      saveState();
+      state[curKey] = { ...(state[curKey] || {}), marks: marks.slice() };
+      state[curKey][key] = !state[curKey][key];
+      e.currentTarget.classList.toggle('on', !!state[curKey][key]);
+      updateReadout();
+    };
+  }
+
+  document.getElementById('download').onclick = () => {
+    saveState();
+    const out = { annotator: 'unknown', protocol: 'docs/PROTOCOL.md v0', marked_at: new Date().toISOString(),
+      clips: Object.entries(state).map(([clip, v]) => ({
+        // key on the stem: src/extract_clicks.py writes "1234", not "1234.wav"
+        clip: clip.replace(/\.wav$/i, ''),
+        marks: v.marks, overlap: !!v.overlap, degraded: !!v.degraded,
+        // "machine-proposed-unconfirmed" means nobody has checked these marks.
+        provenance: v.touched ? 'human-edited' : 'machine-proposed-unconfirmed',
+        // every group is exported; what counts as a coda is a downstream decision
+        codas: groupsOf(v.marks).map(c => ({ clicks: c }))
+      })) };
+    const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'marks.json';
+    a.click();
+  };
+
+  function groupsOf(m) {
+    const g = []; let cur = [];
+    for (let i = 0; i < m.length; i++) {
+      if (i > 0 && m[i] - m[i - 1] > MAX_ICI) { if (cur.length) g.push(cur); cur = []; }
+      cur.push(m[i]);
+    }
+    if (cur.length) g.push(cur);
+    return g;
+  }
+
+  const picker = document.getElementById('picker');
+  document.getElementById('file').onclick = () => picker.click();
+  picker.onchange = e => { files = [...e.target.files]; idx = -1; loadClip(0); };
+
+  const drop = document.getElementById('drop');
+  drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('hot'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('hot'));
+  drop.addEventListener('drop', e => {
+    e.preventDefault(); drop.classList.remove('hot');
+    const fs = [...e.dataTransfer.files].filter(f => /\.wav$/i.test(f.name));
+    if (!fs.length) { drop.textContent = 'Only .wav files, please.'; return; }
+    files = fs.sort((a, b) => (parseInt(a.name) || 0) - (parseInt(b.name) || 0));
+    idx = -1; loadClip(0);
+    drop.style.display = 'none';
+  });
+
+  window.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight') loadClip(idx + 1);
+    if (e.key === 'ArrowLeft') loadClip(idx - 1);
+    if (e.key === 'z' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); marks.pop(); saveState(); draw(); }
+  });
+})();
+</script>
+</body>
+</html>
