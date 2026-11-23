@@ -72,21 +72,26 @@ def match_onsets(a: list[float], b: list[float], tol: float) -> list[tuple[int, 
     return pairs
 
 
-def pattern_signature(icis: list[float], tol: float = 0.012) -> str:
-    """Coarse, scheme-independent rhythm fingerprint.
+def pattern_signature(icis: list[float], ratio: float = 1.8) -> str:
+    """Coarse, scheme-independent rhythm fingerprint: long/short per interval.
 
-    Each ICI is snapped to a multiple of the smallest ICI in the coda (the
-    "beat"), which is how coda rhythm is described qualitatively: long-short,
-    even, syncopated.  Two codas with the same beat structure share a
-    signature even if their absolute tempo differs.
+    Each ICI is coded 1 if it is at least `ratio` times the shortest interval in
+    the coda, else 0.  This is the shape coda names describe qualitatively --
+    `1+1+3` is "long, long, short, short" -- without committing to a scheme.
+
+    An earlier version snapped each interval to a multiple of the shortest one.
+    That looked tidier but flipped on rounding ties: with 10 ms of jitter a
+    2.78x interval changed bucket, so a perfectly good coda scored unstable in
+    36% of perturbations.  A binary long/short code has no ties to land on and
+    measures the same thing.
     """
     if not icis:
         return ""
     arr = np.asarray(icis, dtype=float)
-    beat = float(np.min(arr))
-    if beat <= 0:
+    ref = float(np.min(arr))
+    if ref <= 0:
         return ""
-    return "".join(str(max(1, int(round(v / beat)))) for v in arr)
+    return "".join("1" if v >= ratio * ref else "0" for v in arr)
 
 
 def compare_clip(
@@ -107,7 +112,7 @@ def compare_clip(
         return out
 
     # Match codas to each other by start time so multi-coda clips align.
-    pairs = match_onsets([c["clicks"][0] for c in ca], [c["clicks"][0] for c in cb], toler=0.5)
+    pairs = match_onsets([c["clicks"][0] for c in ca], [c["clicks"][0] for c in cb], 0.5)
     if not pairs:
         out.update(status="no_coda_match", f1=0.0)
         return out
@@ -182,27 +187,41 @@ def summarise(rows: list[dict]) -> dict:
     }
 
 
-def stability(click_times: list[float], jitter_ms: float, trials: int = 200, seed: int = 0) -> dict:
-    """Fraction of realistic perturbations that leave the label unchanged."""
+def stability(
+    click_times: list[float], jitter_ms: float, trials: int = 200,
+    seed: int = 0, ici_tol: float = 0.15,
+) -> dict:
+    """Would a slightly different annotator have produced the same label?
+
+    Perturbs the onsets by the disagreement actually observed between two
+    annotators, then asks whether the *measurements* survive: same click count,
+    and inter-click intervals that stay within `ici_tol` (relative) of the
+    original.  Judged on intervals rather than the discrete rhythm code, because
+    a discrete code has boundaries to land on and reports instability that is an
+    artefact of the coding, not of the annotation.
+    """
     rng = np.random.default_rng(seed)
     t = np.asarray(click_times, dtype=float)
-    base_n = len(t)
-    base_pat = pattern_signature(list(np.diff(t)))
-    keep_n = keep_pat = 0
+    if t.size < 3:
+        return {"trials": 0, "n_clicks": int(t.size), "stable": False}
+    base = np.diff(t)
+    scale = float(np.mean(base)) or 1e-9
     sigma = jitter_ms / 1000.0
+    keep_n = keep_ici = 0
     for _ in range(trials):
         pert = np.sort(t + rng.normal(0, sigma, size=t.shape))
-        if np.any(np.diff(pert) <= 0):  # onsets swapped; degenerate
+        if np.any(np.diff(pert) <= 0):
             continue
-        keep_n += len(pert) == base_n
-        keep_pat += pattern_signature(list(np.diff(pert))) == base_pat
+        keep_n += 1
+        if pert.size == t.size:
+            d = np.abs(np.diff(pert) - base)
+            keep_ici += float(np.mean(d)) <= ici_tol * scale
     return {
         "trials": trials,
-        "n_clicks": base_n,
-        "pattern": base_pat,
+        "n_clicks": int(t.size),
         "survives_click_count": round(keep_n / trials, 3),
-        "survives_pattern": round(keep_pat / trials, 3),
-        "stable": (keep_pat / trials) >= 0.9,
+        "survives_ici": round(keep_ici / trials, 3),
+        "stable": (keep_ici / trials) >= 0.9,
     }
 
 
