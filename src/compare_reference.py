@@ -77,7 +77,9 @@ def main(argv: list[str] | None = None) -> int:
 
     over = np.mean(clicks) / np.mean(ref_clicks) - 1
     print(f"\n  click count bias: {100 * over:+.0f}% against the published distribution")
-    print("  (this bounds the bias; it does not correct it -- that needs human marks)\n")
+    print("  This compares distributions, not clips, so it is a weak check: two")
+    print("  detectors can match a median and disagree on every clip.  For per-clip")
+    print("  accuracy against known labels use src/calibrate.py.\n")
 
     # Stability depends on coda speed; report both regimes.
     fast = [c for c in prim if np.mean(c["icis"]) < 0.12]

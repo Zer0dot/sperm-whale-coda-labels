@@ -78,8 +78,8 @@ Jitter the click times by 10 ms — roughly what two careful annotators differ b
 
 | codas | count | intervals survive | pass a 0.9 stability bar |
 |---|---|---|---|
-| fast (intervals under 120 ms) | 401 | 50% | 6% |
-| slow (intervals 120 ms or more) | 740 | 99% | 99% |
+| fast (intervals under 120 ms) | 479 | 45% | 4% |
+| slow (intervals 120 ms or more) | 837 | 99% | 99% |
 
 A third of the corpus is in the fast regime, and those are the `5R1` and `4R2`
 shapes that make up much of the Dominica repertoire. So "did we agree on this
