@@ -22,7 +22,7 @@ wav_duration == table.Duration + 1.000 s
 ```
 
 This holds with a mean of 1.000000 s and a standard deviation of 9 microseconds
-across 1,391 clips — one sample at 44.1 kHz. That is not a statistical tendency,
+across every matched clip — one sample at 44.1 kHz. That is not a statistical tendency,
 it is a file-level identity.
 
 `src/join.py` recovers the mapping for **1,382 of 1,501 clips (92.1%)**, all from
@@ -39,7 +39,7 @@ proves nothing.
 
 Two consequences, and the second is the important one:
 
-- The corpus is a **ready-made benchmark**: 1,391 clips with published coda
+- The corpus is a **ready-made benchmark**: 1,382 clips with published coda
   type, click count, clan, unit and individual identity.
 - The corpus **leaks its own labels**. Anyone can derive them from audio
   duration plus the public table, with no audio analysis at all. Any result that
@@ -49,7 +49,7 @@ Two consequences, and the second is the important one:
   the public files.
 
 The 0.5 s pad is inferred rather than documented. It is consistent to a sample
-across 1,391 clips, which is strong, but it is an inference.
+across 1,382 clips, which is strong, but it is an inference.
 
 ## 2. Given the true labels, the detector is mediocre — and that is the finding
 
@@ -84,7 +84,7 @@ is working on a different problem.
 A separate `tag` profile was built on the assumption that tag clicks need their
 own settings. It does not earn its place: 57.3% against 58.8% for the far-field
 profile. Simplicity wins, and the parameter that does matter is the echo floor —
-turning it off drops tag accuracy from 58.8% to 28.1%.
+turning it off drops tag accuracy from 58.8% to 29.6%.
 
 **The trap worth recording.** Sweeping 20 combinations of echo floor and
 minimum interval (`src/calibrate.py`, 30% train / 70% validation) tops out near

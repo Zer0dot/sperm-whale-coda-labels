@@ -2,7 +2,7 @@
 """Measure the detector against known labels, and choose its settings.
 
 This exists because the public audio turns out to be labelled: every clip is one
-published coda padded by 0.5 s at each end (see src/join.py).  That gives 1,391
+published coda padded by 0.5 s at each end (see src/join.py).  That gives 1,382
 clips with a published click count, which is the only honest way to calibrate --
 matching a marginal distribution says nothing about per-clip accuracy.
 

@@ -70,9 +70,9 @@ the marks.
 - Detector against those labels: 18.9% exact click count overall — but 58.8% on
   the 199 whale-borne clips and 12.2% on the 1,183 towed ones. Near-field audio
   is a different problem from far-field audio, and averaging them hides that.
-- Agreement machinery built and self-tested (17 checks), but no human
-  annotator has marked anything yet — so there is no real IAA figure, and none
-  is claimed.
+- 27 self-checks across three suites (extractor, join, agreement), but no
+  human annotator has marked anything yet — so there is no real IAA figure, and
+  none is claimed.
 
 ## Honest limits
 

@@ -14,7 +14,7 @@ rebuilds that mapping and reports how much of the corpus it covers.
 Two caveats worth stating plainly:
 
 1. The 0.5 s pad was recovered empirically, not from documentation.  It is
-   consistent to a sample across 1,391 clips, which is strong evidence, but it
+   consistent to a sample across 1,382 clips, which is strong evidence, but it
    is inferred.
 2. Because the mapping is recoverable from duration alone, the public dataset
    leaks the label of each clip to anyone who computes it.  Treat this dataset
