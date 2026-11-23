@@ -334,8 +334,11 @@
 
   for (const [id, key] of [['flagOverlap', 'overlap'], ['flagDegraded', 'degraded']]) {
     document.getElementById(id).onclick = e => {
+      // Same guard as saveState: mid-decode, `marks` still belongs to the
+      // previous clip and must not be recorded against this one.
+      if (!curKey || marksKey !== curKey) return;
       saveState();
-      state[curKey] = state[curKey] || { marks: marks.slice() };
+      state[curKey] = { ...(state[curKey] || {}), marks: marks.slice() };
       state[curKey][key] = !state[curKey][key];
       e.currentTarget.classList.toggle('on', !!state[curKey][key]);
       updateReadout();

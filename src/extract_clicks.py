@@ -37,11 +37,11 @@ PROFILES: dict[str, dict] = {
         # clip-global floor deletes a quiet coda sitting next to a loud one.
         rel_floor_db=-12.0,
         min_gap=0.020,      # merges the ~2-5 ms multi-pulse train of one click
-        # Calibrated, not guessed: in the published Dominica table the largest
-        # observed inter-click interval inside a coda is 0.80 s and the 99th
-        # percentile is 0.49 s.  A looser split gap chains separate codas
-        # together and inflates click counts (measured: 1.0 s gave median 8
-        # clicks against 5 in the reference table).
+        # Taken from the published Dominica table, not guessed: the 99th
+        # percentile inter-click interval inside a coda is 0.49 s.  On current
+        # code the exact value barely matters -- 1.0 s gives a median of 6
+        # clicks against 6 here, mean 6.56 vs 6.61 -- because pulses are merged
+        # and long runs split at their widest gap before this is applied.
         max_ici=0.55,
         min_clicks=3,
         max_clicks=10,      # Dominica scheme documents 1-10 clicks per coda

@@ -127,10 +127,13 @@ does not say which codas it covers is close to meaningless.
   7 to 6 and stops there. Echoes are not separable by level alone.
 - **Where the amplitude gate is applied.** A bug, caught in review: the gate
   that splits loud peaks from quiet ones was computed across the whole clip, so
-  it silently deleted a quiet coda sharing a clip with a loud one. Applied per
-  run instead it does the same job without the cross-contamination, and the
-  numbers above are unchanged — the fix cost nothing once it was placed
-  correctly.
+  it could silently delete a quiet coda sharing a clip with a loud one. Applied
+  per run instead, that cannot happen. Be precise about the size of the fix:
+  1,491 of 1,501 clips hold a single run after pulse merging, so per-run and
+  clip-wide are the same thing for almost the whole corpus, and they differ on
+  4 of the 1,382 joined clips. The pooled numbers move by less than a tenth of
+  a point (within ±1 goes from 34.7% to 34.9%). Right in principle, small in
+  practice.
 - **Ranking codas by click count.** Actively wrong: it selects for merged codas.
   Ranking by strength is correct.
 
