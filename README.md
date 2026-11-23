@@ -6,40 +6,50 @@ Turning sperm whale audio into click times anyone can check, compare, and reuse.
 
 Sperm whales string clicks into short rhythmic bursts called **codas**. We know
 the rhythms differ between whale clans and that codas carry identity cues. What
-nobody has is a public, reusable set of *marked-up audio*: the 1,501 clips
-available to everyone come with no labels, and the 8,719 published coda
-measurements come with no audio.
+nobody had is a public, reusable set of *marked-up audio*: the 1,501 clips
+available to everyone came with no labels, and the 8,719 published coda
+measurements came with no audio.
 
-So anyone wanting to work on codas starts by re-deriving the same measurements
-by hand, differently, in private. This repo is an attempt to fix that one piece:
-a small, honest, checkable way to go from a wav file to click timings, with the
-disagreement between annotators measured rather than assumed.
+Two things came out of building this, and the first one matters more than the
+tool:
+
+**The public clips are labelled after all.** Each clip is one published coda
+padded by half a second at each end, so the label is recoverable from file
+duration alone. `src/join.py` maps 1,391 of 1,501 clips to published rows. That
+means the corpus is a ready-made benchmark — and that it leaks its own labels.
+Read `docs/FINDINGS.md` before using it for anything.
+
+**Counting clicks automatically is hard.** With true labels in hand, the
+detector counts only about one coda in five exactly right. A person correcting
+it is not a nicety; it is the method.
 
 ## What's in the box
 
 | path | what it is |
 |---|---|
+| `src/fetch_data.py` | Downloads the public audio and the published measurements |
+| `src/join.py` | Recovers which published coda each audio clip is |
 | `src/extract_clicks.py` | Finds click onsets in a clip; emits timings, never coda names |
+| `src/calibrate.py` | Scores the detector against known labels, train/validation split |
 | `src/iaa.py` | Compares two people's marks and reports how much they disagree |
+| `src/compare_reference.py` | Reproduces the comparison numbers in `docs/FINDINGS.md` |
 | `tools/marker.html` | Browser tool: open a wav, see the spectrogram, correct the marks |
 | `docs/PROTOCOL.md` | The rulebook annotators follow, including edge cases |
-| `src/fetch_data.py` | Downloads the public audio and the published measurements |
-| `src/compare_reference.py` | Reproduces every number in `docs/FINDINGS.md` |
-| `docs/FINDINGS.md` | What the audio actually shows, and where the tool is biased |
+| `docs/FINDINGS.md` | What the audio actually shows, including the label leak |
 
 ## Quick start
 
 ```bash
 pip install numpy scipy
-python src/fetch_data.py                                          # 45 min of public audio + published table
+python src/fetch_data.py                                        # 45 min of audio + published table
+python src/join.py data/dswp data/DominicaCodas.csv --out out/join.csv
 python src/extract_clicks.py data/dswp --out out/clip_features.jsonl
-python src/compare_reference.py out/clip_features.jsonl data/DominicaCodas.csv
+python src/calibrate.py data/dswp data/DominicaCodas.csv
+python tests/test_iaa.py
 ```
 
-Then open `tools/marker.html` in a browser, drop wav files on it, and correct
-the marks by clicking. Download the result as JSON.
-
-To compare two annotators:
+Then open `tools/marker.html` in a browser, drop wav files on it, and correct the
+marks by clicking. Download the result as JSON. To compare two annotators:
 
 ```bash
 python src/iaa.py alice.json bob.json
@@ -52,31 +62,23 @@ are not objective — the field has published at least three incompatible naming
 schemes — so names are derived in a separate, declared step and never baked into
 the marks.
 
-## Current state
+## Where it stands
 
-Run over the 1,501 public clips (45 minutes of audio, Dominica):
-
-- a coda was found in 1,141 clips (76%)
-- median 6 clicks per coda, median inter-click interval 116 ms
-- median coda duration 0.86 s
-
-Against the 8,719 published Dominica measurements: duration matches almost
-exactly (0.85 s), but the tool finds about 22% more clicks per coda (median 6 vs
-5) and correspondingly shorter gaps. It is finding the right events and
-sometimes including extra closely-spaced clicks around them.
-
-That bias is measured, not hidden. It is exactly what the correction step exists
-for: the machine proposes, a person corrects, and `iaa.py` reports what is left.
-No accuracy figure is claimed for the marks until real annotators have produced
-them.
+- 1,501 clips, 45 minutes of audio, of which 1,391 are matched to published
+  labels.
+- Detector against those labels: 19.7% exact click count, 36.7% within ±1,
+  mean absolute error 2.49 clicks.
+- Agreement machinery built and self-tested (17 checks), but no human
+  annotator has marked anything yet — so there is no real IAA figure, and none
+  is claimed.
 
 ## Honest limits
 
 - 45 minutes of audio is not much. Treat any claim about whale behaviour from
   this corpus as provisional.
-- Far-field boat recordings only so far; animal-borne tag audio needs its own
+- The 0.5 s padding rule is inferred, not documented.
+- Far-field boat recordings only so far; animal-borne tags need their own
   settings.
-- Shallow-water recordings have echoes that look like extra clicks.
 - Every acoustic difference between whales shows up as measurement noise here
   unless it is controlled for.
 

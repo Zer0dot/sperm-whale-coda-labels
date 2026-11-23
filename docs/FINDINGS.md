@@ -1,82 +1,114 @@
 # What the audio shows
 
-Measured on the 1,501 public clips (45 minutes, Dominica, 44.1–120 kHz).
-Every number below is reproduced by:
+Every number here is reproduced by the scripts beside it. If the output stops
+matching this document, this document is wrong.
 
 ```bash
-python src/fetch_data.py          # public audio + published table
-python src/extract_clicks.py data/dswp --out out/clip_features.jsonl
+python src/fetch_data.py
+python src/join.py            data/dswp data/DominicaCodas.csv --out out/join.csv
+python src/extract_clicks.py  data/dswp --out out/clip_features.jsonl
+python src/calibrate.py       data/dswp data/DominicaCodas.csv
 python src/compare_reference.py out/clip_features.jsonl data/DominicaCodas.csv
 ```
 
-If the output stops matching this document, this document is wrong.
+## 1. The public clips are not unlabelled. They are labelled, and the label leaks
 
-## The headline numbers
+The 1,501-clip public dataset ships no metadata — only `fmt ` and `data` chunks,
+no identifying text of any kind. But each clip is exactly one published coda
+plus half a second of padding at each end, so:
 
-| | this pipeline | published Dominica table |
-|---|---|---|
-| codas measured | 1,141 of 1,501 clips (76%) | 8,719 |
-| median clicks per coda | 6 | 5 |
-| mean clicks per coda | 6.41 | 5.26 |
-| median inter-click interval | 116 ms | 171 ms |
-| median coda duration | 0.86 s | 0.85 s |
+```
+wav_duration == table.Duration + 1.000 s
+```
 
-Duration agrees. Click count does not: the tool finds roughly one extra click
-per coda. The likely reason is echoes and reverberation from the shallow
-recording site, which arrive 20–200 ms after a click and sit above the noise
-floor.
+This holds with a mean of 1.000000 s and a standard deviation of 9 microseconds
+across 1,391 clips — one sample at 44.1 kHz. That is not a statistical tendency,
+it is a file-level identity.
 
-## What was tried, and what it did
+`src/join.py` recovers the mapping for **1,391 of 1,501 clips (92.7%)**, all from
+clan EC1, spanning 2005–2015. The remaining 110 (7.3%, mostly the tail from clip
+1420 onward) belong to sessions where no run of consecutive matches forms.
 
-**Splitting codas on gaps.** The published table gives the answer to "how long a
-gap still counts as inside a coda": across 8,719 codas the largest is 0.80 s and
-the 99th percentile is 0.49 s. Using a generous 1.0 s chains separate codas
-together and produces a median of 8 clicks. Using 0.55 s fixes that. This one
-number accounts for most of the naive error.
+Two consequences, and the second is the important one:
 
-**Discarding over-long runs.** Wrong. Echolocation clicks trail codas constantly,
-so most clips contain one long run; discarding those runs threw away the coda in
-734 of 1,501 clips. Splitting them at their widest gap instead is both more
-accurate and far less wasteful.
+- The corpus is a **ready-made benchmark**: 1,391 clips with published coda
+  type, click count, clan, unit and individual identity.
+- The corpus **leaks its own labels**. Anyone can derive them from audio
+  duration plus the public table, with no audio analysis at all. Any result that
+  treats these clips as unlabelled audio is invalid. Splitting by file index
+  also leaks, because the mapping is piecewise-contiguous rather than a single
+  offset.
 
-**An amplitude floor to kill echoes.** Barely helps. Two thirds of detected peaks
-sit more than 6 dB below the loudest click in their run, which looked like a
-decaying echo tail; but a −12 dB floor moves the median click count from 7 to 6
-and no further. Echoes are not cleanly separated by level alone.
+The 0.5 s pad is inferred rather than documented. It is consistent to a sample
+across 1,391 clips, which is strong, but it is an inference.
 
-**Choosing the loudest coda rather than the longest.** Necessary. Ranking by
-click count actively selects for merged codas, since merging is what produces
-high counts.
+## 2. Given the true labels, the detector is mediocre — and that is the finding
 
-## A finding worth keeping
+With 1,391 known click counts, accuracy becomes measurable per clip instead of
+inferred from a histogram. Using the default profile:
 
-Fast codas are measurably harder to characterise than slow ones, by a wide
-margin. Jitter the click times by 10 ms — roughly what two careful annotators
-differ by — and ask whether the inter-click intervals survive:
+| | result |
+|---|---|
+| exact click count | **19.7%** |
+| within ±1 click | 36.7% |
+| bias | +0.58 clicks |
+| mean absolute error | 2.49 clicks |
 
-| codas | count | survive the jitter | pass a 0.9 stability bar |
+Roughly one coda in five is counted correctly. This is not a tuning failure:
+sweeping 60 parameter combinations (`src/calibrate.py`, 30% train / 70%
+validation) tops out around 22–26% exact, and the settings that score highest
+are not acceptable.
+
+**The trap worth recording.** The best-scoring settings merge any two peaks
+closer than 60 ms. That improves click-count agreement — and destroys real
+structure, because the published table contains genuine inter-click intervals
+down to 30 ms. Optimising for "does my count match" therefore selects a
+parameter that merges true clicks. Anyone working on this corpus should judge
+themselves on intervals, not on counts, or they will be rewarded for exactly
+this mistake.
+
+The honest conclusion: counting clicks in far-field recordings automatically is
+hard, and a detector is not a substitute for a person. That is an argument for
+the annotation protocol, not against it.
+
+## 3. Fast codas are much harder to pin down than slow ones
+
+Jitter the click times by 10 ms — roughly what two careful annotators differ by
+— and ask whether the intervals survive (`src/iaa.py`):
+
+| codas | count | intervals survive | pass a 0.9 stability bar |
 |---|---|---|---|
 | fast (intervals under 120 ms) | 401 | 50% | 6% |
 | slow (intervals 120 ms or more) | 740 | 99% | 99% |
 
-A fast coda's intervals move by more than 15% under half the time; a slow coda's
-essentially never do. So "did we agree on this coda?" depends on how fast the
-whale was clicking, and any published agreement figure that does not say which
-codas it covers is close to meaningless. A third of this corpus is in the fast
-regime — and fast codas are not a nuisance subset, they are the `5R1` and `4R2`
-shapes that make up a large share of the Dominica repertoire.
+A third of the corpus is in the fast regime, and those are the `5R1` and `4R2`
+shapes that make up much of the Dominica repertoire. So "did we agree on this
+coda?" depends on how fast the whale was clicking, and an agreement figure that
+does not say which codas it covers is close to meaningless.
 
-The practical consequence: fast codas need finer timing precision than 10 ms
-before their rhythm can be trusted, which means higher sampling rates in the
-annotation tool and more careful onset definition in the protocol.
+## 4. What was tried on the detector, and what each attempt changed
 
-## What is not established here
+- **Splitting codas on gaps.** The published table answers "how long a gap still
+  counts as inside a coda": the largest is 0.80 s, the 99th percentile 0.49 s. A
+  generous 1.0 s chains codas together and gives a median of 8 clicks against 5
+  in the reference; 0.55 s fixes that.
+- **Discarding over-long runs.** Wrong. Echolocation clicks trail codas
+  constantly, so discarding such runs threw away the coda in 734 of 1,501 clips.
+  Splitting them at their widest gap is better.
+- **An amplitude floor for echoes.** Modest. Two thirds of peaks sit more than
+  6 dB below their run's loudest click, but a floor moves the median count from
+  7 to 6 and stops there. Echoes are not separable by level alone.
+- **Applying that floor per clip rather than per run.** A bug, caught in review:
+  it silently deleted a quiet coda sitting next to a loud one.
+- **Ranking codas by click count.** Actively wrong: it selects for merged codas.
+  Ranking by strength is correct.
 
-- **No ground-truth labels yet.** The comparison above is against a published
-  distribution, not against per-clip truth. It bounds the bias; it does not
-  correct it.
-- **No claim about whale behaviour is made from this corpus.** 45 minutes, one
-  site, two clans.
-- **The 24% of clips with no detected coda are unexplained.** They may contain
-  only echolocation, may be quiet, or may be detector failures. Distinguishing
-  those needs a human to look.
+## 5. Not established here
+
+- **Two annotators have not produced marks yet.** Everything above is the
+  detector against published labels. The agreement machinery is built and
+  self-tested, but no human IAA figure exists for this corpus.
+- **No claim about whale behaviour.** 45 minutes, one site, one clan in the
+  joined subset.
+- **The published labels are assumed correct.** They were not re-verified here,
+  and the 110 unmapped clips remain unexplained.
