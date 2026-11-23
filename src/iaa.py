@@ -72,7 +72,7 @@ def match_onsets(a: list[float], b: list[float], tol: float) -> list[tuple[int, 
     return pairs
 
 
-def pattern_signature(icis: list[float], ratio: float = 1.8) -> str:
+def pattern_signature(icis: list[float], ratio: float = 1.6) -> str:
     """Coarse, scheme-independent rhythm fingerprint: long/short per interval.
 
     Each ICI is coded 1 if it is at least `ratio` times the shortest interval in

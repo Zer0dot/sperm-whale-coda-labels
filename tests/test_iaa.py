@@ -56,6 +56,17 @@ def main():
     even = iaa.pattern_signature([0.08, 0.077, 0.076, 0.096])
     check("1+1+3 differs from even coda", p113 != even, f"{p113} vs {even}")
 
+    # Two annotators about 6 ms apart on the same coda must agree on its shape.
+    # Regression: at a 1.8x long/short threshold this pair disagreed, because
+    # one interval sat just under the boundary and the other just over.
+    a = [0.104, 0.352, 0.518, 0.681, 0.803]
+    b = [0.110, 0.348, 0.526, 0.675, 0.810]
+    d = iaa.compare_clip({"clip": "1", "codas": [{"clicks": a}]},
+                         {"clip": "1", "codas": [{"clicks": b}]})
+    check("6 ms jitter agrees on rhythm shape",
+          d["counts_match"] == 1 and d["pattern_match"] == 1,
+          f"pattern_match={d['pattern_match']}")
+
     # Stability must fall with jitter, and slow codas must be more stable than fast.
     slow = iaa.stability([0.0, 0.29, 0.58, 0.87], jitter_ms=10.0)
     fast = iaa.stability([0.0, 0.08, 0.16, 0.24], jitter_ms=10.0)
