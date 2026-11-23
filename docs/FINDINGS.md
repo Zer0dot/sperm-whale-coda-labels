@@ -26,8 +26,12 @@ across 1,391 clips — one sample at 44.1 kHz. That is not a statistical tendenc
 it is a file-level identity.
 
 `src/join.py` recovers the mapping for **1,391 of 1,501 clips (92.7%)**, all from
-clan EC1, spanning 2005–2015. The remaining 110 (7.3%, mostly the tail from clip
-1420 onward) belong to sessions where no run of consecutive matches forms.
+clan EC1, spanning 2005–2015.
+
+The remaining 110 (7.3%) do not form a long enough run to resolve. 82 of them are
+clip 1400 or later; 106 do match at least one published row on duration, but not
+uniquely — dozens of codas share a duration, so a lone match is not evidence.
+Leaving them out is the conservative choice, and it costs 7% of the corpus.
 
 Two consequences, and the second is the important one:
 
