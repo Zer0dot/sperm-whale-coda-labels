@@ -36,6 +36,7 @@ it is not a nicety; it is the method.
 | `tools/marker.html` | Browser tool: open a wav, see the spectrogram, correct the marks |
 | `docs/PROTOCOL.md` | The rulebook annotators follow, including edge cases |
 | `docs/FINDINGS.md` | What the audio actually shows, including the label leak |
+| `site/` | Interactive onboarding course — 7 lessons with real audio, flashcards, quiz |
 | `tests/` | Synthetic regression tests for the extractor, the join, and agreement |
 
 ## Quick start
@@ -86,6 +87,8 @@ the marks.
 
 ## Licence
 
-Code MIT. The audio belongs to the Dominica Sperm Whale Project and is used
-under CC-BY-4.0; it is not redistributed here. Marks produced with this tool are
+Code MIT. The audio belongs to the Dominica Sperm Whale Project, CC-BY-4.0.
+The full 1,501-clip corpus is not redistributed here — `src/fetch_data.py`
+downloads it from source. The seven short clips in `site/audio/` are
+redistributed under CC-BY-4.0 with attribution, as that licence allows. Marks produced with this tool are
 yours to license as you choose.

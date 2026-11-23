@@ -1,0 +1,189 @@
+[
+ {
+  "id": "tag113",
+  "file": "audio/tag113.wav",
+  "clip": "1206",
+  "codaType": "1+1+3",
+  "nClicks": 5,
+  "icis": [
+   0.276,
+   0.287,
+   0.197,
+   0.138
+  ],
+  "onsets": [
+   0.2,
+   0.476,
+   0.763,
+   0.96,
+   1.098
+  ],
+  "clipLen": 1.398,
+  "rig": "whale-borne tag",
+  "clan": "EC1",
+  "unit": "A",
+  "date": "02-03-2015",
+  "fileDur": 1.898,
+  "detected": 5
+ },
+ {
+  "id": "tag5r1",
+  "file": "audio/tag5r1.wav",
+  "clip": "1260",
+  "codaType": "5R1",
+  "nClicks": 5,
+  "icis": [
+   0.082,
+   0.091,
+   0.071,
+   0.065
+  ],
+  "onsets": [
+   0.2,
+   0.282,
+   0.373,
+   0.445,
+   0.51
+  ],
+  "clipLen": 0.81,
+  "rig": "whale-borne tag",
+  "clan": "EC1",
+  "unit": "A",
+  "date": "02-03-2015",
+  "fileDur": 1.31,
+  "detected": 5
+ },
+ {
+  "id": "tag4r2",
+  "file": "audio/tag4r2.wav",
+  "clip": "1237",
+  "codaType": "4R2",
+  "nClicks": 4,
+  "icis": [
+   0.376,
+   0.326,
+   0.329
+  ],
+  "onsets": [
+   0.2,
+   0.576,
+   0.901,
+   1.231
+  ],
+  "clipLen": 1.531,
+  "rig": "whale-borne tag",
+  "clan": "EC1",
+  "unit": "A",
+  "date": "02-03-2015",
+  "fileDur": 2.031,
+  "detected": 4
+ },
+ {
+  "id": "towed-echoes",
+  "file": "audio/towed-echoes.wav",
+  "clip": "2",
+  "codaType": "1+1+3",
+  "nClicks": 5,
+  "icis": [
+   0.405,
+   0.403,
+   0.167,
+   0.176
+  ],
+  "onsets": [
+   0.2,
+   0.605,
+   1.009,
+   1.175,
+   1.351
+  ],
+  "clipLen": 1.651,
+  "rig": "towed hydrophone",
+  "clan": "EC1",
+  "unit": "F",
+  "date": "23/01/2005",
+  "fileDur": 2.151,
+  "detected": 9
+ },
+ {
+  "id": "towed-clean",
+  "file": "audio/towed-clean.wav",
+  "clip": "108",
+  "codaType": "5R1",
+  "nClicks": 5,
+  "icis": [
+   0.086,
+   0.104,
+   0.081,
+   0.063
+  ],
+  "onsets": [
+   0.2,
+   0.286,
+   0.39,
+   0.471,
+   0.534
+  ],
+  "clipLen": 0.834,
+  "rig": "towed hydrophone",
+  "clan": "EC1",
+  "unit": "F",
+  "date": "23/01/2005",
+  "fileDur": 1.334,
+  "detected": 5
+ },
+ {
+  "id": "fast",
+  "file": "audio/fast.wav",
+  "clip": "1261",
+  "codaType": "5R1",
+  "nClicks": 5,
+  "icis": [
+   0.1,
+   0.101,
+   0.071,
+   0.07
+  ],
+  "onsets": [
+   0.2,
+   0.3,
+   0.401,
+   0.472,
+   0.541
+  ],
+  "clipLen": 0.841,
+  "rig": "whale-borne tag",
+  "clan": "EC1",
+  "unit": "A",
+  "date": "02-03-2015",
+  "fileDur": 1.341,
+  "detected": 5
+ },
+ {
+  "id": "slow",
+  "file": "audio/slow.wav",
+  "clip": "1392",
+  "codaType": "1+1+3",
+  "nClicks": 5,
+  "icis": [
+   0.496,
+   0.375,
+   0.185,
+   0.191
+  ],
+  "onsets": [
+   0.2,
+   0.696,
+   1.071,
+   1.256,
+   1.447
+  ],
+  "clipLen": 1.747,
+  "rig": "whale-borne tag",
+  "clan": "EC1",
+  "unit": "A",
+  "date": "02-03-2015",
+  "fileDur": 2.247,
+  "detected": 5
+ }
+]
