@@ -505,7 +505,14 @@ const QUIZ = [
       const target = document.getElementById(a.getAttribute("href").slice(1));
       if (!target) return;
       e.preventDefault();
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
+      // Instant, not smooth.  In the preview the page is embedded in an iframe
+      // that does not scroll itself -- the PARENT document does -- and a smooth
+      // scroll across that boundary animates to the wrong offset or gets reset.
+      // Behavior "auto" propagates to the parent correctly; measured landing
+      // was within a few pixels of the sticky bar.
+      target.scrollIntoView({ behavior: "auto", block: "start" });
+      // Drop focus so the chip does not stay outlined after the jump.
+      if (a.blur) a.blur();
     });
   });
   // Highlight whichever lesson is currently on screen.
