@@ -30,16 +30,17 @@ header.hero{padding:64px 0 40px;border-bottom:1px solid var(--line);
 
 /* nav chips */
 nav{position:sticky;top:0;z-index:20;background:#0d1017ee;backdrop-filter:blur(8px);
-  border-bottom:1px solid var(--line);padding:10px 0}
-nav .wrap{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
-nav .wrap::-webkit-scrollbar{display:none}
-nav a{flex:0 0 auto;padding:6px 12px;border:1px solid var(--line);border-radius:99px;
-  color:var(--dim);text-decoration:none;font-size:13.5px;white-space:nowrap}
+  border-bottom:1px solid var(--line);padding:9px 0}
+nav .wrap{display:flex;gap:7px;flex-wrap:wrap;justify-content:center}
+
+nav a{flex:0 0 auto;padding:5px 11px;border:1px solid var(--line);border-radius:99px;
+  color:var(--dim);text-decoration:none;font-size:13px;white-space:nowrap}
 nav a:hover{color:var(--ink);border-color:var(--accent)}
 nav a.active{color:#05121f;background:var(--accent);border-color:var(--accent);font-weight:600}
 
 /* lessons */
-section.lesson{padding:52px 0;border-bottom:1px solid var(--line);scroll-margin-top:64px}
+section.lesson{padding:52px 0;border-bottom:1px solid var(--line);
+  scroll-margin-top:calc(var(--navh,64px) + 10px)}
 header.hero{scroll-margin-top:0}
 .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;
   border-radius:50%;background:var(--accent);color:#05121f;font-weight:700;font-size:13px;
