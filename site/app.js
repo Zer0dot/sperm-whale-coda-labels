@@ -509,6 +509,11 @@ const QUIZ = [
 
   function focusSection(id) {
     const target = document.getElementById(id);
+    // Diagnostic breadcrumb: a screenshot of the footer tells us whether the
+    // handler ran at all, which distinguishes "click not delivered" from
+    // "click delivered, styling not applied".
+    const tag = document.getElementById("render-tag");
+    if (tag) tag.textContent = "scripts running · clicked " + (target ? "#" + id : "(missing " + id + ")");
     if (!target) return false;
     document.body.classList.add("focused");
     sections.forEach(s => s.classList.toggle("current", s === target));
@@ -543,6 +548,8 @@ const QUIZ = [
 
 /* ───────────────────────── boot ───────────────────────── */
 (async function boot() {
+  const rt = document.getElementById("render-tag");
+  if (rt) rt.textContent = "scripts running";
   let manifest = [];
   try {
     manifest = await (await fetch("audio/manifest.json")).json();
