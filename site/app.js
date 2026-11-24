@@ -185,6 +185,15 @@ function playerCard(el, entry) {
         `${entry.detected === entry.nClicks ? " — right." : "."}</span>`);
   };
 
+  // A blank dark rectangle reads as broken; say what to do.
+  (function placeholder() {
+    const c = canvas.getContext("2d");
+    c.fillStyle = "#06080c"; c.fillRect(0, 0, canvas.width, canvas.height);
+    c.fillStyle = "#4b5568";
+    c.font = "15px ui-sans-serif,system-ui,sans-serif";
+    c.fillText("press play to see the spectrogram", 18, canvas.height / 2);
+  })();
+
   el.querySelector("details").addEventListener("toggle", e => {
     if (e.target.open) { truthShown = true; reveal(); redraw(); }
     else { truthShown = false; redraw(); }
@@ -250,6 +259,18 @@ function playerCard(el, entry) {
   }
 
   return { redraw, entry };
+}
+
+/* ───────────────────── free browsing of the repertoire ───────────────────── */
+function exploreGrid(manifest) {
+  const grid = document.getElementById("exploreGrid");
+  if (!grid) return;
+  manifest.filter(e => e.id.startsWith("x-")).forEach(e => {
+    const div = document.createElement("div");
+    div.className = "player";
+    grid.appendChild(div);
+    playerCard(div, e);
+  });
 }
 
 /* ─────────────────── lesson 3: naming table from the audio ─────────────────── */
@@ -479,6 +500,7 @@ const QUIZ = [
     else el.textContent = "audio unavailable";
   });
   shapeTable(manifest);
+  exploreGrid(manifest);
   leakDemo(manifest);
   stabilityDemo(manifest);
 })();

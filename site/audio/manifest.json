@@ -185,5 +185,277 @@
   "date": "02-03-2015",
   "fileDur": 2.247,
   "detected": 5
+ },
+ {
+  "id": "x-1p1p3",
+  "file": "audio/x-1p1p3.wav",
+  "clip": "8",
+  "codaType": "1+1+3",
+  "nClicks": 5,
+  "icis": [
+   0.357,
+   0.331,
+   0.16,
+   0.152
+  ],
+  "onsets": [
+   0.2,
+   0.557,
+   0.889,
+   1.049,
+   1.201
+  ],
+  "clipLen": 1.501,
+  "rig": "towed hydrophone",
+  "clan": "EC1",
+  "unit": "F",
+  "date": "23/01/2005",
+  "fileDur": 2.001,
+  "detected": 5
+ },
+ {
+  "id": "x-5r1",
+  "file": "audio/x-5r1.wav",
+  "clip": "109",
+  "codaType": "5R1",
+  "nClicks": 5,
+  "icis": [
+   0.095,
+   0.099,
+   0.08,
+   0.064
+  ],
+  "onsets": [
+   0.2,
+   0.295,
+   0.394,
+   0.474,
+   0.537
+  ],
+  "clipLen": 0.837,
+  "rig": "towed hydrophone",
+  "clan": "EC1",
+  "unit": "F",
+  "date": "23/01/2005",
+  "fileDur": 1.337,
+  "detected": 5
+ },
+ {
+  "id": "x-5r2",
+  "file": "audio/x-5r2.wav",
+  "clip": "169",
+  "codaType": "5R2",
+  "nClicks": 5,
+  "icis": [
+   0.117,
+   0.14,
+   0.147,
+   0.136
+  ],
+  "onsets": [
+   0.2,
+   0.317,
+   0.457,
+   0.603,
+   0.74
+  ],
+  "clipLen": 1.04,
+  "rig": "towed hydrophone",
+  "clan": "EC1",
+  "unit": "F",
+  "date": "01/02/2005",
+  "fileDur": 1.54,
+  "detected": 5
+ },
+ {
+  "id": "x-5r3",
+  "file": "audio/x-5r3.wav",
+  "clip": "694",
+  "codaType": "5R3",
+  "nClicks": 5,
+  "icis": [
+   0.237,
+   0.237,
+   0.252,
+   0.267
+  ],
+  "onsets": [
+   0.2,
+   0.437,
+   0.675,
+   0.927,
+   1.194
+  ],
+  "clipLen": 1.494,
+  "rig": "towed hydrophone",
+  "clan": "EC1",
+  "unit": "F",
+  "date": "04/03/2010",
+  "fileDur": 1.994,
+  "detected": 5
+ },
+ {
+  "id": "x-4r2",
+  "file": "audio/x-4r2.wav",
+  "clip": "1242",
+  "codaType": "4R2",
+  "nClicks": 4,
+  "icis": [
+   0.33,
+   0.333,
+   0.337
+  ],
+  "onsets": [
+   0.2,
+   0.53,
+   0.863,
+   1.2
+  ],
+  "clipLen": 1.5,
+  "rig": "whale-borne tag",
+  "clan": "EC1",
+  "unit": "A",
+  "date": "02-03-2015",
+  "fileDur": 2.0,
+  "detected": 4
+ },
+ {
+  "id": "x-4d",
+  "file": "audio/x-4d.wav",
+  "clip": "275",
+  "codaType": "4D",
+  "nClicks": 4,
+  "icis": [
+   0.245,
+   0.17,
+   0.112
+  ],
+  "onsets": [
+   0.2,
+   0.445,
+   0.615,
+   0.727
+  ],
+  "clipLen": 1.027,
+  "rig": "towed hydrophone",
+  "clan": "EC1",
+  "unit": "F",
+  "date": "07/02/2005",
+  "fileDur": 1.527,
+  "detected": 4
+ },
+ {
+  "id": "x-3d",
+  "file": "audio/x-3d.wav",
+  "clip": "961",
+  "codaType": "3D",
+  "nClicks": 3,
+  "icis": [
+   0.173,
+   0.143
+  ],
+  "onsets": [
+   0.2,
+   0.373,
+   0.516
+  ],
+  "clipLen": 0.816,
+  "rig": "towed hydrophone",
+  "clan": "EC1",
+  "unit": "J",
+  "date": "06/02/2010",
+  "fileDur": 1.316,
+  "detected": 3
+ },
+ {
+  "id": "x-7d1",
+  "file": "audio/x-7d1.wav",
+  "clip": "546",
+  "codaType": "7D1",
+  "nClicks": 7,
+  "icis": [
+   0.462,
+   0.236,
+   0.204,
+   0.19,
+   0.143,
+   0.121
+  ],
+  "onsets": [
+   0.2,
+   0.662,
+   0.898,
+   1.101,
+   1.291,
+   1.435,
+   1.556
+  ],
+  "clipLen": 1.856,
+  "rig": "towed hydrophone",
+  "clan": "EC1",
+  "unit": "F",
+  "date": "03/03/2010",
+  "fileDur": 2.356,
+  "detected": 7
+ },
+ {
+  "id": "x-6i",
+  "file": "audio/x-6i.wav",
+  "clip": "123",
+  "codaType": "6i",
+  "nClicks": 6,
+  "icis": [
+   0.019,
+   0.024,
+   0.029,
+   0.039,
+   0.054
+  ],
+  "onsets": [
+   0.2,
+   0.22,
+   0.243,
+   0.272,
+   0.31,
+   0.365
+  ],
+  "clipLen": 0.665,
+  "rig": "towed hydrophone",
+  "clan": "EC1",
+  "unit": "F",
+  "date": "23/01/2005",
+  "fileDur": 1.165,
+  "detected": 6
+ },
+ {
+  "id": "x-7i",
+  "file": "audio/x-7i.wav",
+  "clip": "126",
+  "codaType": "7i",
+  "nClicks": 7,
+  "icis": [
+   0.019,
+   0.019,
+   0.019,
+   0.025,
+   0.035,
+   0.076
+  ],
+  "onsets": [
+   0.2,
+   0.219,
+   0.238,
+   0.258,
+   0.283,
+   0.318,
+   0.395
+  ],
+  "clipLen": 0.694,
+  "rig": "towed hydrophone",
+  "clan": "EC1",
+  "unit": "F",
+  "date": "23/01/2005",
+  "fileDur": 1.195,
+  "detected": 7
  }
 ]
