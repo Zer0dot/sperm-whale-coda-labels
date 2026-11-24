@@ -486,45 +486,59 @@ const QUIZ = [
 })();
 
 /* ───────────────────────── nav ───────────────────────── */
-// Fragment navigation is blocked in the sandboxed preview, so #anchors do
-// nothing. Scroll the target into view by script instead; keep href for the
-// case where this page is ever served plainly.
+// Navigation must not depend on scrolling. In an embedded preview the outer
+// document can own the scroll and refuse to move: scripted scrollIntoView then
+// does nothing at all, which is exactly what happened. So a chip switches to
+// that section (content changes, which always works) and only *then* tries to
+// scroll as a nicety. "Show all" returns to linear reading.
 (function nav() {
-  const links = [...document.querySelectorAll('nav a[href^="#"]')];
-  // The sticky bar changes height when the chips wrap; keep scroll targets
-  // clear of it.
+  const links = [...document.querySelectorAll("nav a[href^='#']")];
+  const sections = [...document.querySelectorAll("section.lesson")];
+  const showAllBtn = document.getElementById("showAll");
   const navEl = document.querySelector("nav");
+
   const syncNavHeight = () => {
     if (navEl) document.documentElement.style.setProperty("--navh", navEl.offsetHeight + "px");
   };
   syncNavHeight();
   window.addEventListener("resize", syncNavHeight);
 
+  function highlight(id) {
+    links.forEach(a => a.classList.toggle("active", a.getAttribute("href") === "#" + id));
+  }
+
+  function focusSection(id) {
+    const target = document.getElementById(id);
+    if (!target) return false;
+    document.body.classList.add("focused");
+    sections.forEach(s => s.classList.toggle("current", s === target));
+    if (showAllBtn) showAllBtn.hidden = false;
+    highlight(id);
+    // best effort only; the switch above is what actually navigates
+    try { target.scrollIntoView({ behavior: "auto", block: "start" }); } catch (e) {}
+    try { window.scrollTo(0, 0); } catch (e) {}
+    return true;
+  }
+
+  function showAll() {
+    document.body.classList.remove("focused");
+    sections.forEach(s => s.classList.remove("current"));
+    if (showAllBtn) showAllBtn.hidden = true;
+    links.forEach(a => a.classList.remove("active"));
+  }
+
   links.forEach(a => {
     a.addEventListener("click", e => {
-      const target = document.getElementById(a.getAttribute("href").slice(1));
-      if (!target) return;
       e.preventDefault();
-      // Instant, not smooth.  In the preview the page is embedded in an iframe
-      // that does not scroll itself -- the PARENT document does -- and a smooth
-      // scroll across that boundary animates to the wrong offset or gets reset.
-      // Behavior "auto" propagates to the parent correctly; measured landing
-      // was within a few pixels of the sticky bar.
-      target.scrollIntoView({ behavior: "auto", block: "start" });
-      // Drop focus so the chip does not stay outlined after the jump.
+      focusSection(a.getAttribute("href").slice(1));
       if (a.blur) a.blur();
     });
   });
-  // Highlight whichever lesson is currently on screen.
-  const sections = links.map(a => document.getElementById(a.getAttribute("href").slice(1))).filter(Boolean);
-  if (!("IntersectionObserver" in window) || !sections.length) return;
-  const io = new IntersectionObserver(entries => {
-    entries.forEach(en => {
-      if (!en.isIntersecting) return;
-      links.forEach(a => a.classList.toggle("active", a.getAttribute("href") === "#" + en.target.id));
-    });
-  }, { rootMargin: "-45% 0px -50% 0px" });
-  sections.forEach(sec => io.observe(sec));
+  if (showAllBtn) showAllBtn.addEventListener("click", showAll);
+
+  // Deep link (#l4) still works when the preview allows fragments.
+  const startId = location.hash ? location.hash.slice(1) : "";
+  if (startId && document.getElementById(startId)) focusSection(startId);
 })();
 
 /* ───────────────────────── boot ───────────────────────── */
