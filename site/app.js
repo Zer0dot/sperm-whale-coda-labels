@@ -485,6 +485,32 @@ const QUIZ = [
   });
 })();
 
+/* ───────────────────────── nav ───────────────────────── */
+// Fragment navigation is blocked in the sandboxed preview, so #anchors do
+// nothing. Scroll the target into view by script instead; keep href for the
+// case where this page is ever served plainly.
+(function nav() {
+  const links = [...document.querySelectorAll('nav a[href^="#"]')];
+  links.forEach(a => {
+    a.addEventListener("click", e => {
+      const target = document.getElementById(a.getAttribute("href").slice(1));
+      if (!target) return;
+      e.preventDefault();
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+  // Highlight whichever lesson is currently on screen.
+  const sections = links.map(a => document.getElementById(a.getAttribute("href").slice(1))).filter(Boolean);
+  if (!("IntersectionObserver" in window) || !sections.length) return;
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(en => {
+      if (!en.isIntersecting) return;
+      links.forEach(a => a.classList.toggle("active", a.getAttribute("href") === "#" + en.target.id));
+    });
+  }, { rootMargin: "-45% 0px -50% 0px" });
+  sections.forEach(sec => io.observe(sec));
+})();
+
 /* ───────────────────────── boot ───────────────────────── */
 (async function boot() {
   let manifest = [];
