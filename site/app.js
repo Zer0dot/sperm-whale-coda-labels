@@ -491,6 +491,15 @@ const QUIZ = [
 // case where this page is ever served plainly.
 (function nav() {
   const links = [...document.querySelectorAll('nav a[href^="#"]')];
+  // The sticky bar changes height when the chips wrap; keep scroll targets
+  // clear of it.
+  const navEl = document.querySelector("nav");
+  const syncNavHeight = () => {
+    if (navEl) document.documentElement.style.setProperty("--navh", navEl.offsetHeight + "px");
+  };
+  syncNavHeight();
+  window.addEventListener("resize", syncNavHeight);
+
   links.forEach(a => {
     a.addEventListener("click", e => {
       const target = document.getElementById(a.getAttribute("href").slice(1));
