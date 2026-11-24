@@ -100,6 +100,12 @@ def main(argv=None) -> int:
                            and 0.30 < mean_ici(c) < 0.45 and clean(c)),
     ]
 
+    # An extra browsing set: one clean example of each common coda type, so the
+    # reader can hear the repertoire rather than three shapes.
+    EXPLORE_TYPES = ["1+1+3", "5R1", "5R2", "5R3", "4R2", "4D", "3D", "7D1", "6i", "7i"]
+    for t in EXPLORE_TYPES:
+        wanted.append((f"x-{t.replace('+', 'p').lower()}", lambda c, t=t: joined[c]["CodaType"] == t and clean(c)))
+
     manifest = []
     used: set[str] = set()
     for slug, pred in wanted:
