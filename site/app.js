@@ -564,8 +564,9 @@ const QUIZ = [
   const [cssB, jsB] = await Promise.all([whichBuild("style.css"), whichBuild("app.js")]);
   const stale = [cssB !== BUILD && "css:" + cssB, jsB !== BUILD && "js:" + jsB].filter(Boolean);
   if (rt) {
-    rt.textContent = "build " + BUILD +
-      (stale.length ? " · STALE " + stale.join(" ") : " · assets match") +
+    // The HTML's own build number is already printed beside this, so don't
+    // repeat it; this line reports only what the running scripts can see.
+    rt.textContent = (stale.length ? "STALE " + stale.join(" ") : "assets match") +
       " · scripts running";
     rt.style.color = stale.length ? "var(--warm)" : "var(--good)";
   }
