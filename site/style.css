@@ -137,3 +137,5 @@ body.focused section.lesson.current{display:block}
   color:#05121f;border:0;border-radius:99px;padding:11px 18px;font:600 14px inherit;
   cursor:pointer;box-shadow:0 6px 24px #0009}
 .showall:hover{filter:brightness(1.08)}
+
+/* build:10 */

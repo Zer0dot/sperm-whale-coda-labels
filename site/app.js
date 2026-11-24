@@ -548,8 +548,27 @@ const QUIZ = [
 
 /* ───────────────────────── boot ───────────────────────── */
 (async function boot() {
+  const BUILD = "10";
   const rt = document.getElementById("render-tag");
-  if (rt) rt.textContent = "scripts running";
+
+  // Self-audit: ask the server for each asset and check which build it carries.
+  // A screenshot of this line tells us whether the shell is rendering the same
+  // bytes the app is serving, without needing access to the shell.
+  async function whichBuild(url) {
+    try {
+      const t = await (await fetch(url, {cache: "no-store"})).text();
+      const m = t.match(/build:(\d+)/);
+      return m ? m[1] : "?";
+    } catch (e) { return "err"; }
+  }
+  const [cssB, jsB] = await Promise.all([whichBuild("style.css"), whichBuild("app.js")]);
+  const stale = [cssB !== BUILD && "css:" + cssB, jsB !== BUILD && "js:" + jsB].filter(Boolean);
+  if (rt) {
+    rt.textContent = "build " + BUILD +
+      (stale.length ? " · STALE " + stale.join(" ") : " · assets match") +
+      " · scripts running";
+    rt.style.color = stale.length ? "var(--warm)" : "var(--good)";
+  }
   let manifest = [];
   try {
     manifest = await (await fetch("audio/manifest.json")).json();
@@ -567,3 +586,5 @@ const QUIZ = [
   leakDemo(manifest);
   stabilityDemo(manifest);
 })();
+
+// build:10
